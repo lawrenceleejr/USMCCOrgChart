@@ -90,7 +90,11 @@ jobs:
       - name: Build site
         run: python scripts/build-site.py --repo "${{ github.repository }}"
 
+      # enablement lets the first run turn Pages on itself, instead of
+      # needing Settings -> Pages -> Source: GitHub Actions set by hand
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
