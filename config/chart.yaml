@@ -121,6 +121,8 @@ groups:
   - id: speakers
     # [top, right, bottom, left] — the deeper top band holds the label
     padding: [74, 24, 24, 24]
+    # centre the box on the pair, so the air beside them matches
+    symmetric: true
     members: [orimoto-speakers, black]
     label:
       lines: [Speakers Committee]

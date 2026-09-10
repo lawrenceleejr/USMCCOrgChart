@@ -243,16 +243,27 @@ def group_boxes(cfg: dict, people: dict[str, Person],
             pt, pr, pb, pl = ((pad,) * 4 if isinstance(pad, (int, float))
                               else tuple(pad))
             if g.get("members"):
-                xs, ys = [], []
+                xs, ys, circle_xs = [], [], []
                 for pid in g["members"]:
                     person = people[pid]
+                    circle_xs += [person.cx - person.r, person.cx + person.r]
                     xs += [person.cx - person.r, person.cx + person.r]
                     ys += [person.cy - person.r, person.cy + person.r]
                     for _n, x0, y0, x1, y1 in person_boxes(person, cfg, fonts):
                         xs += [x0, x1]
                         ys += [y0, y1]
-                x, y = min(xs) - pl, min(ys) - pt
-                w, h = max(xs) + pr - x, max(ys) + pb - y
+                if g.get("symmetric"):
+                    # Balance the box about the people rather than hugging
+                    # the ink: names differ in width, so equal padding from
+                    # the text leaves visibly unequal air beside the
+                    # headshots.
+                    mid = (min(circle_xs) + max(circle_xs)) / 2
+                    half = max(mid - min(xs) + pl, max(xs) - mid + pr)
+                    x, w = mid - half, 2 * half
+                    y, h = min(ys) - pt, max(ys) + pb - min(ys) + pt
+                else:
+                    x, y = min(xs) - pl, min(ys) - pt
+                    w, h = max(xs) + pr - x, max(ys) + pb - y
             else:
                 x, y, w, h = g.get("x", 0), 0, g.get("width", 0), 0
             # a prose block has to fit inside the box that carries it

@@ -93,6 +93,22 @@ def test_group_prose_wraps_to_its_width(cfg):
         assert x1 - x0 <= spec["width"] or " " not in line
 
 
+def test_symmetric_group_box_is_balanced_about_its_people(cfg, people):
+    boxes = render.group_boxes(cfg, people, FONTS)
+    for group in cfg["groups"]:
+        if not group.get("symmetric"):
+            continue
+        x, _, w, _ = boxes[group["id"]]
+        members = [people[pid] for pid in group["members"]]
+        left = min(p.cx - p.r for p in members) - x
+        right = (x + w) - max(p.cx + p.r for p in members)
+        assert left == pytest.approx(right, abs=0.5)
+        # and the ink still fits inside
+        for p in members:
+            for _n, x0, _y0, x1, _y1 in render.person_boxes(p, cfg, FONTS):
+                assert x <= x0 and x1 <= x + w
+
+
 def test_renders_both_themes(cfg, people):
     for theme in cfg["themes"]:
         svg = render.render(cfg, theme, people, FONTS)
