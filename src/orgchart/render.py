@@ -43,7 +43,7 @@ FONT_FILES = [
 class Person:
     id: str
     name: str
-    role: str
+    roles: list[str]
     affiliation: str
     style: dict
     layout: str
@@ -55,6 +55,23 @@ class Person:
     @property
     def r(self) -> float:
         return self.style["r"]
+
+    def meta(self) -> list[tuple[str, str]]:
+        """The lines under the name: every role, then the affiliation."""
+        lines = [(f"role{i}", role) for i, role in enumerate(self.roles) if role]
+        if self.affiliation:
+            lines.append(("affiliation", self.affiliation))
+        return lines
+
+    def meta_dy(self, index: int) -> float:
+        """Baseline offset of the index-th line under the name.
+
+        Roles stack downwards on the configured role/affiliation spacing, so
+        a single-role node lands exactly where it always did.
+        """
+        dy = self.style["dy"]
+        step = dy["affiliation"] - dy["role"]
+        return dy["role"] + index * step
 
 
 def load_config(path: Path) -> dict:
@@ -92,10 +109,11 @@ def build_people(cfg: dict, headshots: Path,
     for entry in cfg["people"]:
         style = cfg["styles"][entry.get("style", "lg")]
         cx, cy = entry["at"]
+        role = entry.get("role", "")
         people[entry["id"]] = Person(
             id=entry["id"],
             name=entry["name"],
-            role=entry.get("role", ""),
+            roles=[role] if isinstance(role, str) else list(role),
             affiliation=entry.get("affiliation", ""),
             style=style,
             layout=entry.get("layout", "left"),
@@ -118,14 +136,39 @@ def text_extent(cfg: dict, role: str, size: float, weight: int, content: str,
                           content, size)
 
 
+def wrap(cfg: dict, spec: dict, content: str, fonts: Path) -> list[str]:
+    """Break a sentence into lines that fit `spec["width"]` canvas units."""
+    role = spec.get("font", "secondary")
+    size, weight = spec["size"], spec.get("weight", 400)
+    width = spec["width"]
+    lines, current = [], ""
+    for word in content.split():
+        trial = f"{current} {word}".strip()
+        x0, _, x1, _ = text_extent(cfg, role, size, weight, trial, fonts)
+        if current and x1 - x0 > width:
+            lines.append(current)
+            current = word
+        else:
+            current = trial
+    if current:
+        lines.append(current)
+    return lines
+
+
+def group_text_lines(group: dict, cfg: dict, fonts: Path) -> list[str]:
+    spec = group.get("text")
+    return wrap(cfg, spec, spec["content"], fonts) if spec else []
+
+
 def person_boxes(p: Person, cfg: dict, fonts: Path) -> list[tuple]:
     """Text ink boxes for a person, in absolute canvas coordinates."""
-    st, dy = p.style, p.style["dy"]
+    st = p.style
     x = p.cx if p.layout == "below" else p.cx + p.r + st["gap"]
-    runs = [("name", p.name, st["name"]), ("role", p.role, st["meta"]),
-            ("affiliation", p.affiliation, st["meta"])]
+    runs = [("name", p.name, st["name"], st["dy"]["name"])]
+    for i, (key, content) in enumerate(p.meta()):
+        runs.append((key, content, st["meta"], p.meta_dy(i)))
     boxes = []
-    for key, content, spec in runs:
+    for key, content, spec, offset in runs:
         if not content:
             continue
         role = spec.get("font", "display" if key == "name" else "secondary")
@@ -133,7 +176,7 @@ def person_boxes(p: Person, cfg: dict, fonts: Path) -> list[tuple]:
                                      content, fonts)
         w = x1 - x0
         left = x + x0 - (w / 2 if p.layout == "below" else 0)
-        top = p.cy + dy[key] + y0
+        top = p.cy + offset + y0
         boxes.append((f"{p.id}.{key}", left, top, left + w, top + (y1 - y0)))
     return boxes
 
@@ -170,6 +213,14 @@ def group_boxes(cfg: dict, people: dict[str, Person],
                 w, h = max(xs) + pad - x, max(ys) + pad - y
             else:
                 x, y, w, h = g.get("x", 0), 0, g.get("width", 0), 0
+            # a prose block has to fit inside the box that carries it
+            spec = g.get("text")
+            if spec:
+                lines = group_text_lines(g, cfg, fonts)
+                step = spec.get("line_height", spec["size"] + 7)
+                w = max(w, spec["at"][0] + spec["width"] + pad)
+                h = max(h, spec["at"][1] + (len(lines) - 1) * step
+                        + spec["size"] * 0.3 + pad)
             ref = g.get("match_vertical")
             if ref:
                 if ref not in resolved:
@@ -350,25 +401,35 @@ def draw_person(p: Person, theme: dict, ring_w: float, typo: dict) -> str:
                     size=s["name"]["size"], weight=s["name"]["weight"],
                     fill=theme["ink"], anchor=anchor,
                     font=font(typo, s["name"].get("font", "display"))))
-    for key in ("role", "affiliation"):
-        value = getattr(p, key)
-        if value:
-            out.append(text(x, p.cy + dy[key], value,
-                            size=s["meta"]["size"], weight=s["meta"]["weight"],
-                            fill=theme["muted"], anchor=anchor,
-                            font=font(typo, s["meta"].get("font", "secondary"))))
+    for i, (_key, value) in enumerate(p.meta()):
+        out.append(text(x, p.cy + p.meta_dy(i), value,
+                        size=s["meta"]["size"], weight=s["meta"]["weight"],
+                        fill=theme["muted"], anchor=anchor,
+                        font=font(typo, s["meta"].get("font", "secondary"))))
     out.append("</g>")
     return "".join(out)
 
 
 def draw_group(group: dict, box: tuple, theme: dict, strokes: dict,
-               typo: dict) -> str:
+               typo: dict, lines: list[str] | None = None) -> str:
     x, y, w, h = box
+    lines = lines or []
     out = [
         f'<rect x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" '
         f'rx="{fmt(strokes["box_radius"])}" fill="none" '
         f'stroke="{theme["ink"]}" stroke-width="{fmt(strokes["box"])}"/>'
     ]
+    spec = group.get("text")
+    if spec:
+        step = spec.get("line_height", spec["size"] + 7)
+        for i, line in enumerate(lines):
+            out.append(text(x + spec["at"][0], y + spec["at"][1] + i * step,
+                            line, size=spec["size"],
+                            weight=spec.get("weight", 400),
+                            fill=theme.get("muted", theme["ink"]),
+                            anchor=spec.get("align", "start"),
+                            font=font(typo, spec.get("font", "secondary"))))
+
     label = group.get("label")
     if label:
         # label offsets are relative to the box corner, so a computed box
@@ -426,7 +487,7 @@ def render(cfg: dict, theme_name: str, people: dict[str, Person],
     boxes = boxes if boxes is not None else group_boxes(cfg, people, fonts)
     for group in cfg.get("groups", []):
         parts.append(draw_group(group, boxes[group["id"]], theme, strokes,
-                                typo))
+                                typo, group_text_lines(group, cfg, fonts)))
     for points in cfg.get("connectors", []):
         parts.append(draw_connector(points, people, theme, strokes["connector"]))
     for p in people.values():

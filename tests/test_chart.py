@@ -48,6 +48,34 @@ def test_group_boxes_enclose_their_members(cfg, people):
             assert y < p.cy - p.r and p.cy + p.r < y + h
 
 
+def test_multiple_roles_stack_under_the_name(cfg, people):
+    one = render.Person(id="a", name="A", roles=["Chair"], affiliation="FNAL",
+                        style=cfg["styles"]["sm"], layout="below", cx=0.0,
+                        cy=0.0, photo=None, crop=dict(render.DEFAULT_CROP))
+    two = render.Person(id="b", name="B", roles=["Chair", "Speakers"],
+                        affiliation="FNAL", style=cfg["styles"]["sm"],
+                        layout="below", cx=0.0, cy=0.0, photo=None,
+                        crop=dict(render.DEFAULT_CROP))
+    assert [k for k, _ in one.meta()] == ["role0", "affiliation"]
+    assert [k for k, _ in two.meta()] == ["role0", "role1", "affiliation"]
+    step = cfg["styles"]["sm"]["dy"]["affiliation"] - cfg["styles"]["sm"]["dy"]["role"]
+    # a single-role node is unmoved; the extra role pushes the affiliation down
+    assert one.meta_dy(0) == cfg["styles"]["sm"]["dy"]["role"]
+    assert one.meta_dy(1) == cfg["styles"]["sm"]["dy"]["affiliation"]
+    assert two.meta_dy(2) == cfg["styles"]["sm"]["dy"]["affiliation"] + step
+
+
+def test_group_prose_wraps_to_its_width(cfg):
+    spec = {"font": "secondary", "size": 17, "weight": 400, "width": 150}
+    words = "the muon collider community steering the design of a facility"
+    lines = render.wrap(cfg, spec, words, FONTS)
+    assert len(lines) > 1
+    assert " ".join(lines).split() == words.split()
+    for line in lines:
+        x0, _, x1, _ = render.text_extent(cfg, "secondary", 17, 400, line, FONTS)
+        assert x1 - x0 <= spec["width"] or " " not in line
+
+
 def test_renders_both_themes(cfg, people):
     for theme in cfg["themes"]:
         svg = render.render(cfg, theme, people, FONTS)
@@ -59,7 +87,7 @@ def test_renders_both_themes(cfg, people):
 
 
 def rect(image_path: Path, r: float, **crop):
-    p = render.Person(id="t", name="T", role="", affiliation="",
+    p = render.Person(id="t", name="T", roles=[], affiliation="",
                       style={"r": r, "gap": 0,
                              "name": {"size": 10, "weight": 700},
                              "meta": {"size": 8, "weight": 400},

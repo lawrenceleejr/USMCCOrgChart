@@ -13,7 +13,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .render import Person, group_boxes, person_boxes, resolve
+from .render import (Person, group_boxes, group_text_lines, person_boxes,
+                     resolve)
 
 DEFAULTS = {
     "circle_to_circle": 24.0,
@@ -103,10 +104,20 @@ def collect(cfg: dict, people: dict[str, Person], fonts: Path):
         w = x1 - x0
         texts.append((content, ax - w / 2, ay + y0, ax + w / 2, ay + y1))
     for g in cfg.get("groups", []):
+        gx, gy, _, _ = boxes[g["id"]]
+        spec = g.get("text")
+        if spec:
+            step = spec.get("line_height", spec["size"] + 7)
+            for i, line in enumerate(group_text_lines(g, cfg, fonts)):
+                x0, y0, x1, y1 = metrics.extent(
+                    fonts, typo[spec.get("font", "secondary")]["family"],
+                    spec.get("weight", 400), line, spec["size"])
+                ax, ay = gx + spec["at"][0], gy + spec["at"][1] + i * step
+                texts.append((f"{g['id']}:text{i}", ax, ay + y0,
+                              ax + (x1 - x0), ay + y1))
         label = g.get("label")
         if not label:
             continue
-        gx, gy, _, _ = boxes[g["id"]]
         role = label.get("font", "secondary")
         step = label.get("line_height", label["size"] + 6)
         for i, line in enumerate(label["lines"]):
