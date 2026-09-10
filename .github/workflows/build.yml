@@ -87,14 +87,18 @@ jobs:
           name: usmcc-org-chart-svg
           path: out
 
-      - name: Build site
-        run: python scripts/build-site.py --repo "${{ github.repository }}"
-
-      # enablement lets the first run turn Pages on itself, instead of
-      # needing Settings -> Pages -> Source: GitHub Actions set by hand
+      # enablement lets the first run turn Pages on itself where the token
+      # allows it; otherwise Pages must be switched on once by hand under
+      # Settings -> Pages -> Source: GitHub Actions
       - uses: actions/configure-pages@v5
+        id: pages
         with:
           enablement: true
+
+      - name: Build site
+        run: |
+          python scripts/build-site.py \
+            --base-url "${{ steps.pages.outputs.base_url }}"
 
       - uses: actions/upload-pages-artifact@v3
         with:
