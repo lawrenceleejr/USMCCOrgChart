@@ -129,7 +129,7 @@ connectors:
   # communications coordinator -> deputy -> coordinators
   - [["kennedy:cx", 647], ["kennedy:cx", 873]]
   - [["kennedy:cx", 790], [1960, 790]]
-  - [[1190, 873], [1600, 873]]
+  - [[1190, 873], [1854, 873]]
   # speakers committee, hanging from the council rather than from one rep
   - [[950, 647], [950, 1160]]
   - [[810, 1160], [1140, 1160]]
@@ -248,7 +248,18 @@ people:
     at: [1522, 940]
   - id: orimoto
     name: Toyoko Orimoto
-    role: [Speakers Committee, Inreach Coordinator]
+    role: Inreach Coordinator
+    affiliation: Northeastern
+    style: sm
+    layout: below
+    at: [1754, 940]
+
+  # ...and appears a second time on the speakers committee. `alias_of` says
+  # this is the same person, so she keeps one headshot and one framing.
+  - id: orimoto-speakers
+    alias_of: orimoto
+    name: Toyoko Orimoto
+    role: Speakers Committee
     affiliation: Northeastern
     style: sm
     layout: below

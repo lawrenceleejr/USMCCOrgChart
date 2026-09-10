@@ -65,6 +65,18 @@ def test_multiple_roles_stack_under_the_name(cfg, people):
     assert two.meta_dy(2) == cfg["styles"]["sm"]["dy"]["affiliation"] + step
 
 
+def test_alias_shares_one_photo_and_framing(cfg, people):
+    aliases = [e for e in cfg["people"] if e.get("alias_of")]
+    for entry in aliases:
+        alias, original = people[entry["id"]], people[entry["alias_of"]]
+        assert alias.photo == original.photo
+        assert alias.crop == original.crop
+        # same person, shown twice, in different roles and places
+        assert alias.name == original.name
+        assert (alias.cx, alias.cy) != (original.cx, original.cy)
+        assert alias.roles != original.roles
+
+
 def test_group_prose_wraps_to_its_width(cfg):
     spec = {"font": "secondary", "size": 17, "weight": 400, "width": 150}
     words = "the muon collider community steering the design of a facility"

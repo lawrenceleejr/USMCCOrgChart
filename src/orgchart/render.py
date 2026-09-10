@@ -105,11 +105,15 @@ def build_people(cfg: dict, headshots: Path,
                  framing: Path | None = None) -> dict[str, Person]:
     base_crop = {**DEFAULT_CROP, **(cfg.get("defaults", {}).get("crop") or {})}
     computed = load_framing(framing)
+    entries = {e["id"]: e for e in cfg["people"]}
     people = {}
     for entry in cfg["people"]:
         style = cfg["styles"][entry.get("style", "lg")]
         cx, cy = entry["at"]
         role = entry.get("role", "")
+        # someone who sits in two places on the chart is one person: the
+        # second entry borrows the first's photo and framing
+        source = entries.get(entry.get("alias_of"), entry)
         people[entry["id"]] = Person(
             id=entry["id"],
             name=entry["name"],
@@ -119,9 +123,9 @@ def build_people(cfg: dict, headshots: Path,
             layout=entry.get("layout", "left"),
             cx=cx,
             cy=cy,
-            photo=find_photo(entry, headshots),
+            photo=find_photo(source, headshots),
             # generated framing sits under anything set by hand
-            crop={**base_crop, **(computed.get(entry["id"]) or {}),
+            crop={**base_crop, **(computed.get(source["id"]) or {}),
                   **(entry.get("crop") or {})},
         )
     return people

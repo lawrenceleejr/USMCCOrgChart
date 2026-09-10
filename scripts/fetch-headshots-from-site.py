@@ -129,6 +129,8 @@ def main(argv=None) -> int:
         pid = person["id"]
         if args.only and pid not in args.only:
             continue
+        if person.get("alias_of"):
+            continue  # a second placing of someone already fetched
         key = normalise(person.get("photo_source") or person["name"])
         directories = site.get(key)
         if not directories:

@@ -139,6 +139,7 @@ def main(argv=None) -> int:
 
     cfg = yaml.safe_load(args.config.read_text())
     people = build_people(cfg, args.headshots)
+    aliases = {e["id"]: e.get("alias_of") for e in cfg["people"]}
 
     # with --only, keep everyone else's framing rather than dropping it
     framing = {}
@@ -148,8 +149,8 @@ def main(argv=None) -> int:
     for pid, person in people.items():
         if args.only and pid not in args.only:
             continue
-        if person.photo is None:
-            continue
+        if person.photo is None or aliases.get(pid):
+            continue  # a second placing inherits the original's framing
         size, face = detect(person.photo, args.model, args.score)
         if face is None:
             undetected.append(pid)
