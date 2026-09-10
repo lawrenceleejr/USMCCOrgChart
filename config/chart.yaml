@@ -298,18 +298,20 @@ people:
     name: Toyoko Orimoto
     role: ""
     affiliation: Northeastern
+    order: [affiliation, role]
     style: sm
     layout: below
-    at: [1420, 1250]
+    at: [1670, 1250]
     nudge: {dx: 7}
 
   - id: black
     name: Kevin Black
     role: Chair
     affiliation: Wisconsin
+    order: [affiliation, role]
     style: sm
     layout: below
-    at: [1670, 1250]
+    at: [1420, 1250]
     nudge: {dx: -8}
 
 # Both themes paint on a transparent background; only the ink changes.

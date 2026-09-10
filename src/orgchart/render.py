@@ -14,7 +14,7 @@ import importlib.util
 import os
 import sys
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -51,21 +51,28 @@ class Person:
     cy: float
     photo: Path | None
     crop: dict
+    # which of the lines under the name to draw, and in what order
+    order: list[str] = field(default_factory=lambda: ["role", "affiliation"])
 
     @property
     def r(self) -> float:
         return self.style["r"]
 
     def meta(self) -> list[tuple[str, str]]:
-        """The lines under the name: every role, then the affiliation.
+        """The lines under the name, in the person's `order`.
+
+        Roles come before the affiliation unless the entry says otherwise.
 
         A role given as an empty string keeps its line but draws nothing,
         which lines affiliations up across a row where only some people
         carry a title.
         """
-        lines = [(f"role{i}", role) for i, role in enumerate(self.roles)]
-        if self.affiliation:
-            lines.append(("affiliation", self.affiliation))
+        lines: list[tuple[str, str]] = []
+        for key in self.order:
+            if key == "role":
+                lines += [(f"role{i}", r) for i, r in enumerate(self.roles)]
+            elif self.affiliation:
+                lines.append(("affiliation", self.affiliation))
         return lines
 
     def meta_dy(self, index: int) -> float:
@@ -144,6 +151,7 @@ def build_people(cfg: dict, headshots: Path,
             affiliation=entry.get("affiliation", ""),
             style=style,
             layout=entry.get("layout", "left"),
+            order=list(entry.get("order", ("role", "affiliation"))),
             cx=cx,
             cy=cy,
             photo=find_photo(source, headshots),
