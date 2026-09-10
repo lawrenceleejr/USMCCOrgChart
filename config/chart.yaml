@@ -118,6 +118,16 @@ groups:
       size: 21
       align: middle
       line_height: 27
+  - id: speakers
+    # [top, right, bottom, left] — the deeper top band holds the label
+    padding: [74, 24, 24, 24]
+    members: [orimoto-speakers, black]
+    label:
+      lines: [Speakers Committee]
+      at: [24, 44]
+      font: secondary
+      size: 21
+      align: start
   - id: council
     padding: 22
     members: [jindariani, holmes, stratakis, dipetrillo, meade, kennedy]
@@ -140,10 +150,7 @@ connectors:
   - [["kennedy:cx", 790], [1960, 790]]
   - [[1190, 873], [1854, 873]]
   # experimental rep -> deputy
-  - [["dipetrillo:cx", 647], ["dipetrillo:cx", 790], [900, 790]]
-  # speakers committee, hanging from the council rather than from one rep
-  - [[1170, 647], [1170, 1160]]
-  - [[810, 1160], [1170, 1160]]
+  - [["dipetrillo:cx", 647], ["dipetrillo:cx", 790], [1160, 790]]
   # accelerator rep -> working groups
   - [["stratakis:cx", 647], ["stratakis:cx", 873]]
   - [[60, 873], [650, 873]]
@@ -193,6 +200,7 @@ people:
     style: md
     layout: left
     at: [820, 716]
+    nudge: {dx: -5}
 
   - id: meade
     name: Patrick Meade
@@ -288,20 +296,20 @@ people:
   - id: orimoto-speakers
     alias_of: orimoto
     name: Toyoko Orimoto
-    role: Speakers Committee
+    role: ""
     affiliation: Northeastern
     style: sm
     layout: below
-    at: [860, 1230]
+    at: [1420, 1250]
     nudge: {dx: 7}
 
   - id: black
     name: Kevin Black
-    role: Speakers Committee (Chair)
+    role: Chair
     affiliation: Wisconsin
     style: sm
     layout: below
-    at: [1090, 1230]
+    at: [1670, 1250]
     nudge: {dx: -8}
 
 # Both themes paint on a transparent background; only the ink changes.

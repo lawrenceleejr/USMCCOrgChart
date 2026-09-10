@@ -57,8 +57,13 @@ class Person:
         return self.style["r"]
 
     def meta(self) -> list[tuple[str, str]]:
-        """The lines under the name: every role, then the affiliation."""
-        lines = [(f"role{i}", role) for i, role in enumerate(self.roles) if role]
+        """The lines under the name: every role, then the affiliation.
+
+        A role given as an empty string keeps its line but draws nothing,
+        which lines affiliations up across a row where only some people
+        carry a title.
+        """
+        lines = [(f"role{i}", role) for i, role in enumerate(self.roles)]
         if self.affiliation:
             lines.append(("affiliation", self.affiliation))
         return lines
@@ -126,14 +131,16 @@ def build_people(cfg: dict, headshots: Path,
     for entry in cfg["people"]:
         style = cfg["styles"][entry.get("style", "lg")]
         cx, cy = entry["at"]
-        role = entry.get("role", "")
+        # an absent role means no line at all; an empty one reserves it
+        role = entry.get("role") if "role" in entry else None
         # someone who sits in two places on the chart is one person: the
         # second entry borrows the first's photo and framing
         source = entries.get(entry.get("alias_of"), entry)
         people[entry["id"]] = Person(
             id=entry["id"],
             name=entry["name"],
-            roles=[role] if isinstance(role, str) else list(role),
+            roles=([] if role is None else
+                   [role] if isinstance(role, str) else list(role)),
             affiliation=entry.get("affiliation", ""),
             style=style,
             layout=entry.get("layout", "left"),
@@ -223,6 +230,10 @@ def group_boxes(cfg: dict, people: dict[str, Person],
                 resolved[g["id"]] = tuple(g["box"])
                 continue
             pad = g.get("padding", pad_default)
+            # a scalar pads every side; a list is [top, right, bottom, left],
+            # which lets a box reserve a band for its own label
+            pt, pr, pb, pl = ((pad,) * 4 if isinstance(pad, (int, float))
+                              else tuple(pad))
             if g.get("members"):
                 xs, ys = [], []
                 for pid in g["members"]:
@@ -232,8 +243,8 @@ def group_boxes(cfg: dict, people: dict[str, Person],
                     for _n, x0, y0, x1, y1 in person_boxes(person, cfg, fonts):
                         xs += [x0, x1]
                         ys += [y0, y1]
-                x, y = min(xs) - pad, min(ys) - pad
-                w, h = max(xs) + pad - x, max(ys) + pad - y
+                x, y = min(xs) - pl, min(ys) - pt
+                w, h = max(xs) + pr - x, max(ys) + pb - y
             else:
                 x, y, w, h = g.get("x", 0), 0, g.get("width", 0), 0
             # a prose block has to fit inside the box that carries it
@@ -241,9 +252,9 @@ def group_boxes(cfg: dict, people: dict[str, Person],
             if spec:
                 lines = group_text_lines(g, cfg, fonts)
                 step = spec.get("line_height", spec["size"] + 7)
-                w = max(w, spec["at"][0] + spec["width"] + pad)
+                w = max(w, spec["at"][0] + spec["width"] + pr)
                 h = max(h, spec["at"][1] + (len(lines) - 1) * step
-                        + spec["size"] * 0.3 + pad)
+                        + spec["size"] * 0.3 + pb)
             ref = g.get("match_vertical")
             if ref:
                 if ref not in resolved:
@@ -440,6 +451,8 @@ def draw_person(p: Person, theme: dict, ring_w: float, typo: dict) -> str:
                     fill=theme["ink"], anchor=anchor,
                     font=font(typo, s["name"].get("font", "display"))))
     for i, (_key, value) in enumerate(p.meta()):
+        if not value:
+            continue  # a reserved but empty line
         out.append(text(x, p.cy + p.meta_dy(i), value,
                         size=s["meta"]["size"], weight=s["meta"]["weight"],
                         fill=theme["muted"], anchor=anchor,
