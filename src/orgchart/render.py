@@ -119,12 +119,12 @@ def data_uri(path: Path) -> str:
     return f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode()
 
 
-def font_face_css(fonts: Path) -> str:
-    """Embed the TTFs so the SVG travels with its type."""
+def font_face_css(fonts: Path, used: set[tuple[str, int]]) -> str:
+    """Embed the TTFs actually drawn with, so the SVG travels with its type."""
     faces = []
     for family, weight, filename in FONT_FILES:
         ttf = fonts / filename
-        if not ttf.exists():
+        if (family, weight) not in used or not ttf.exists():
             continue
         blob = base64.b64encode(ttf.read_bytes()).decode()
         faces.append(
@@ -148,9 +148,14 @@ def initials(name: str) -> str:
 # drawing
 
 
-def stack(typo: dict, role: str) -> str:
-    """CSS font stack for a typographic role ("display" or "secondary")."""
-    return typo[role]["stack"]
+# (family, weight) pairs used by the drawing in progress, so only those
+# faces are embedded.
+USED_FACES: set[tuple[str, int]] = set()
+
+
+def font(typo: dict, role: str) -> dict:
+    """The face for a typographic role ("display" or "secondary")."""
+    return typo[role]
 
 
 def fmt(value: float) -> str:
@@ -158,8 +163,11 @@ def fmt(value: float) -> str:
 
 
 def text(x, y, content, *, size, weight, fill, anchor="start",
-         stack=None) -> str:
-    family = f' font-family="{escape(stack)}"' if stack else ""
+         font=None) -> str:
+    family = ""
+    if font:
+        family = f' font-family="{escape(font["stack"])}"'
+        USED_FACES.add((font["family"], int(weight)))
     return (
         f'<text x="{fmt(x)}" y="{fmt(y)}"{family} font-size="{fmt(size)}" '
         f'font-weight="{weight}" fill="{fill}" text-anchor="{anchor}">'
@@ -188,7 +196,7 @@ def draw_headshot(p: Person, theme: dict, ring_w: float, typo: dict) -> str:
         out.append(
             text(p.cx, p.cy + p.r * 0.30, initials(p.name),
                  size=p.r * 0.78, weight=400, fill=theme["placeholder"],
-                 anchor="middle", stack=stack(typo, "secondary"))
+                 anchor="middle", font=font(typo, "secondary"))
         )
     out.append(
         f'<circle cx="{fmt(p.cx)}" cy="{fmt(p.cy)}" r="{fmt(p.r)}" '
@@ -208,14 +216,14 @@ def draw_person(p: Person, theme: dict, ring_w: float, typo: dict) -> str:
     out.append(text(x, p.cy + dy["name"], p.name,
                     size=s["name"]["size"], weight=s["name"]["weight"],
                     fill=theme["ink"], anchor=anchor,
-                    stack=stack(typo, s["name"].get("font", "display"))))
+                    font=font(typo, s["name"].get("font", "display"))))
     for key in ("role", "affiliation"):
         value = getattr(p, key)
         if value:
             out.append(text(x, p.cy + dy[key], value,
                             size=s["meta"]["size"], weight=s["meta"]["weight"],
                             fill=theme["muted"], anchor=anchor,
-                            stack=stack(typo, s["meta"].get("font", "secondary"))))
+                            font=font(typo, s["meta"].get("font", "secondary"))))
     out.append("</g>")
     return "".join(out)
 
@@ -235,7 +243,7 @@ def draw_group(group: dict, theme: dict, strokes: dict, typo: dict) -> str:
             out.append(text(lx, ly + i * step, line, size=label["size"],
                             weight=label.get("weight", 400), fill=theme["ink"],
                             anchor=label.get("align", "start"),
-                            stack=stack(typo, label.get("font", "secondary"))))
+                            font=font(typo, label.get("font", "secondary"))))
     return "".join(out)
 
 
@@ -257,12 +265,13 @@ def render(cfg: dict, theme_name: str, people: dict[str, Person],
     typo = cfg["typography"]
     w, h = cfg["canvas"]["width"], cfg["canvas"]["height"]
 
+    USED_FACES.clear()
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" '
         f'xmlns:xlink="http://www.w3.org/1999/xlink" width="{w}" height="{h}" '
         f'viewBox="0 0 {w} {h}" '
         f'font-family="{escape(typo["display"]["stack"])}">',
-        f"<style>{font_face_css(fonts)}text{{font-kerning:normal}}</style>",
+        None,  # placeholder, filled in below once the faces used are known
         f"<title>{escape(cfg['meta']['title'])} — {escape(str(cfg['meta']['date']))}</title>",
     ]
 
@@ -270,13 +279,13 @@ def render(cfg: dict, theme_name: str, people: dict[str, Person],
     parts.append(text(tx, ty, cfg["meta"]["title"], size=typo["title"]["size"],
                       weight=typo["title"]["weight"], fill=theme["ink"],
                       anchor="middle",
-                      stack=stack(typo, typo["title"].get("font", "display"))))
+                      font=font(typo, typo["title"].get("font", "display"))))
     dx, dyy = typo["date"]["at"]
     parts.append(text(dx, dyy, str(cfg["meta"]["date"]),
                       size=typo["date"]["size"],
                       weight=typo["date"]["weight"], fill=theme["muted"],
                       anchor="middle",
-                      stack=stack(typo, typo["date"].get("font", "secondary"))))
+                      font=font(typo, typo["date"].get("font", "secondary"))))
 
     for group in cfg.get("groups", []):
         parts.append(draw_group(group, theme, strokes, typo))
@@ -286,6 +295,8 @@ def render(cfg: dict, theme_name: str, people: dict[str, Person],
         parts.append(draw_person(p, theme, strokes["ring"], typo))
 
     parts.append("</svg>")
+    parts[1] = (f"<style>{font_face_css(fonts, USED_FACES)}"
+                f"text{{font-kerning:normal}}</style>")
     return "\n".join(parts)
 
 
