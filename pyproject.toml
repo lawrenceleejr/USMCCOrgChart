@@ -3,7 +3,10 @@ name = "usmcc-orgchart"
 version = "0.1.0"
 description = "Renders the USMCC leadership org chart to transparent SVG/PNG"
 requires-python = ">=3.10"
-dependencies = ["PyYAML>=6", "cairosvg>=2.7"]
+dependencies = ["PyYAML>=6", "cairosvg>=2.7", "Pillow>=10"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
 
 [project.scripts]
 usmcc-orgchart = "orgchart.render:main"

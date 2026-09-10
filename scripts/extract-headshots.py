@@ -22,6 +22,14 @@ from PIL import Image, ImageDraw
 REPO = Path(__file__).resolve().parents[1]
 
 
+def rel(path: Path) -> str:
+    """Repo-relative path when possible, absolute otherwise."""
+    try:
+        return str(path.relative_to(REPO))
+    except ValueError:
+        return str(path)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -74,7 +82,7 @@ def main(argv=None) -> int:
             crop.putalpha(mask)
         crop.save(dest)
         written += 1
-        print(f"wrote {dest.relative_to(REPO)} ({crop.width}x{crop.height})")
+        print(f"wrote {rel(dest)} ({crop.width}x{crop.height})")
 
     if skipped:
         print(f"{skipped} headshot(s) already present; --force to replace",

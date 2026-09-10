@@ -21,10 +21,13 @@ jobs:
           sudo apt-get install -y --no-install-recommends libcairo2
 
       - name: Install dependencies
-        run: pip install --upgrade pip && pip install -e .
+        run: pip install --upgrade pip && pip install -e ".[dev]"
 
       - name: Fetch fonts
         run: ./scripts/fetch-fonts.sh
+
+      - name: Test
+        run: python -m pytest -q
 
       - name: Render chart
         # --strict fails the build if anything in the layout is closer than
