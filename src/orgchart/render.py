@@ -94,6 +94,21 @@ def find_photo(person: dict, headshots: Path) -> Path | None:
 DEFAULT_CROP = {"zoom": 1.0, "dx": 0.0, "dy": 0.0}
 
 
+def nudge(crop: dict, tweak: dict | None) -> dict:
+    """Apply a hand tweak on top of a computed crop.
+
+    `dx`/`dy` shift the subject within the circle, in canvas units, and
+    `scale` multiplies the framed zoom. They are relative, so re-running
+    the framer does not throw the tweak away.
+    """
+    if not tweak:
+        return crop
+    return {**crop,
+            "zoom": crop["zoom"] * float(tweak.get("scale", 1.0)),
+            "dx": crop["dx"] - float(tweak.get("dx", 0.0)),
+            "dy": crop["dy"] - float(tweak.get("dy", 0.0))}
+
+
 def load_framing(path: Path | None) -> dict:
     """Generated per-person crop knobs, if they have been computed."""
     if path is None or not path.exists():
@@ -124,9 +139,12 @@ def build_people(cfg: dict, headshots: Path,
             cx=cx,
             cy=cy,
             photo=find_photo(source, headshots),
-            # generated framing sits under anything set by hand
-            crop={**base_crop, **(computed.get(source["id"]) or {}),
-                  **(entry.get("crop") or {})},
+            # generated framing sits under anything set by hand, then any
+            # nudge is applied relative to the result
+            crop=nudge(
+                {**base_crop, **(computed.get(source["id"]) or {}),
+                 **(entry.get("crop") or {})},
+                entry.get("nudge")),
         )
     return people
 
@@ -414,6 +432,61 @@ def draw_person(p: Person, theme: dict, ring_w: float, typo: dict) -> str:
     return "".join(out)
 
 
+def grid_cells(group: dict, box: tuple) -> list[tuple[float, float]]:
+    """Lattice of circle centres covering a group box.
+
+    The lattice is centred on the box and extended a ring beyond every edge,
+    so the border cuts through the outermost circles and the group reads as
+    a window onto a larger crowd rather than a tidy set of portraits.
+    """
+    spec = group["grid"]
+    r, gap = spec["r"], spec.get("gap", 10)
+    x, y, w, h = box
+    want = 2 * r + gap
+    # Anchor a row and a column of centres on each border, then even the
+    # spacing out between them: the border cuts those circles in half and
+    # the crowd reads as continuing past the frame.
+    cols = max(round(w / want), 1) + 1
+    rows = max(round(h / want), 1) + 1
+    step_x = w / (cols - 1) if cols > 1 else 0
+    step_y = h / (rows - 1) if rows > 1 else 0
+    return [(x + c * step_x, y + rw * step_y)
+            for rw in range(rows) for c in range(cols)]
+
+
+def draw_grid(group: dict, box: tuple, theme: dict, strokes: dict,
+              typo: dict, headshots: Path) -> str:
+    spec = group["grid"]
+    r = spec["r"]
+    x, y, w, h = box
+    gid = group["id"]
+    photos = [headshots / name for name in spec.get("photos", [])]
+    out = [f'<clipPath id="grid-{gid}"><rect x="{fmt(x)}" y="{fmt(y)}" '
+           f'width="{fmt(w)}" height="{fmt(h)}" '
+           f'rx="{fmt(strokes["box_radius"])}"/></clipPath>',
+           f'<g clip-path="url(#grid-{gid})">']
+    for i, (cx, cy) in enumerate(grid_cells(group, box)):
+        photo = photos[i] if i < len(photos) and photos[i].exists() else None
+        if photo is not None:
+            clip = f"grid-{gid}-{i}"
+            out.append(f'<clipPath id="{clip}"><circle cx="{fmt(cx)}" '
+                       f'cy="{fmt(cy)}" r="{fmt(r)}"/></clipPath>')
+            out.append(f'<image clip-path="url(#{clip})" x="{fmt(cx - r)}" '
+                       f'y="{fmt(cy - r)}" width="{fmt(2 * r)}" '
+                       f'height="{fmt(2 * r)}" '
+                       f'preserveAspectRatio="xMidYMid slice" '
+                       f'href="{data_uri(photo)}"/>')
+        else:
+            out.append(f'<circle cx="{fmt(cx)}" cy="{fmt(cy)}" r="{fmt(r)}" '
+                       f'fill="{theme["placeholder"]}" '
+                       f'fill-opacity="{spec.get("fill_opacity", 0.10)}"/>')
+        out.append(f'<circle cx="{fmt(cx)}" cy="{fmt(cy)}" r="{fmt(r)}" '
+                   f'fill="none" stroke="{theme["ring"]}" '
+                   f'stroke-width="{fmt(spec.get("ring", strokes["ring"] * 0.7))}"/>')
+    out.append("</g>")
+    return "".join(out)
+
+
 def draw_group(group: dict, box: tuple, theme: dict, strokes: dict,
                typo: dict, lines: list[str] | None = None) -> str:
     x, y, w, h = box
@@ -460,7 +533,9 @@ def draw_connector(points, people, theme, width) -> str:
 
 
 def render(cfg: dict, theme_name: str, people: dict[str, Person],
-           fonts: Path, boxes: dict | None = None) -> str:
+           fonts: Path, boxes: dict | None = None,
+           headshots: Path | None = None) -> str:
+    headshots = headshots or REPO / "headshots"
     theme = cfg["themes"][theme_name]
     strokes = cfg["strokes"]
     typo = cfg["typography"]
@@ -490,8 +565,12 @@ def render(cfg: dict, theme_name: str, people: dict[str, Person],
 
     boxes = boxes if boxes is not None else group_boxes(cfg, people, fonts)
     for group in cfg.get("groups", []):
-        parts.append(draw_group(group, boxes[group["id"]], theme, strokes,
-                                typo, group_text_lines(group, cfg, fonts)))
+        box = boxes[group["id"]]
+        if group.get("grid"):
+            parts.append(draw_grid(group, box, theme, strokes, typo,
+                                   headshots))
+        parts.append(draw_group(group, box, theme, strokes, typo,
+                                group_text_lines(group, cfg, fonts)))
     for points in cfg.get("connectors", []):
         parts.append(draw_connector(points, people, theme, strokes["connector"]))
     for p in people.values():
@@ -618,7 +697,8 @@ def main(argv=None) -> int:
     base = cfg["meta"].get("basename", "org-chart")
     for theme_name in (args.themes or list(cfg["themes"])):
         svg_path = args.out / f"{base}-{theme_name}.svg"
-        svg_path.write_text(render(cfg, theme_name, people, args.fonts, boxes))
+        svg_path.write_text(render(cfg, theme_name, people, args.fonts, boxes,
+                                   args.headshots))
         print(f"wrote {rel(svg_path)}")
         if args.formats:
             written = write_raster(svg_path, args.scale, args.fonts,

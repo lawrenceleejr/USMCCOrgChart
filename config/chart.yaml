@@ -102,13 +102,19 @@ groups:
     x: 40
     width: 188
     match_vertical: council
+    # a window onto a much larger group: a lattice of equal circles, cut off
+    # by the border so the crowd reads as continuing past it. Photos fill the
+    # cells in order; the rest stay as soft discs.
+    grid:
+      r: 18
+      gap: 10
+      photos: []
     label:
-      lines: [Leadership, Strategy, Group]
-      at: [94, 50]
+      lines: [Leadership Strategy Group]
+      at: [0, -16]
       font: secondary
-      size: 21
-      align: middle
-      line_height: 27
+      size: 19
+      align: start
   - id: council
     padding: 22
     members: [jindariani, holmes, stratakis, dipetrillo, meade, kennedy]
@@ -150,6 +156,7 @@ people:
     style: xl
     layout: left
     at: [766, 348]
+    nudge: {dx: -7, dy: 7}
   - id: holmes
     name: Tova Holmes
     role: Vice Chair
@@ -157,6 +164,7 @@ people:
     style: xl
     layout: left
     at: [1145, 348]
+    nudge: {dx: -7}
 
   - id: stratakis
     name: Diktys Stratakis
@@ -180,6 +188,7 @@ people:
     style: lg
     layout: left
     at: [1148, 568]
+    nudge: {scale: 0.9}
   - id: kennedy
     name: Kiley Kennedy
     role: Communications Coordinator
@@ -187,6 +196,7 @@ people:
     style: lg
     layout: left
     at: [1512, 568]
+    nudge: {dx: 7}
 
   - id: lee
     name: Lawrence Lee
@@ -195,6 +205,7 @@ people:
     style: md
     layout: left
     at: [1620, 716]
+    nudge: {scale: 0.85, dx: -7}
 
   - id: berg
     name: J. Scott Berg
@@ -203,6 +214,7 @@ people:
     style: sm
     layout: below
     at: [130, 940]
+    nudge: {scale: 0.85, dx: -8}
   - id: hoover
     name: Austin Hoover
     role: Proton Driver
@@ -224,6 +236,7 @@ people:
     style: sm
     layout: below
     at: [238, 1158]
+    nudge: {scale: 0.85}
   - id: nanni
     name: Emilio Nanni
     role: RF
@@ -231,6 +244,7 @@ people:
     style: sm
     layout: below
     at: [458, 1158]
+    nudge: {dx: 7}
 
   - id: de
     name: Kaushik De
@@ -239,6 +253,7 @@ people:
     style: sm
     layout: below
     at: [1290, 940]
+    nudge: {dx: -4}
   - id: chang
     name: Philip Chang
     role: Outreach Coordinator
@@ -246,6 +261,7 @@ people:
     style: sm
     layout: below
     at: [1522, 940]
+    nudge: {dx: -7}
   - id: orimoto
     name: Toyoko Orimoto
     role: Inreach Coordinator
@@ -264,6 +280,7 @@ people:
     style: sm
     layout: below
     at: [860, 1230]
+    nudge: {dx: 7}
 
   - id: black
     name: Kevin Black
@@ -272,6 +289,7 @@ people:
     style: sm
     layout: below
     at: [1090, 1230]
+    nudge: {dx: -8}
 
 # Both themes paint on a transparent background; only the ink changes.
 themes:
