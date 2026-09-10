@@ -15,6 +15,7 @@ import os
 import sys
 import tempfile
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -51,6 +52,7 @@ class Person:
     cy: float
     photo: Path | None
     crop: dict
+    adjust: dict = field(default_factory=dict)
     # which of the lines under the name to draw, and in what order
     order: list[str] = field(default_factory=lambda: ["role", "affiliation"])
 
@@ -157,6 +159,7 @@ def build_people(cfg: dict, headshots: Path,
             photo=find_photo(source, headshots),
             # generated framing sits under anything set by hand, then any
             # nudge is applied relative to the result
+            adjust=dict(entry.get("adjust") or {}),
             crop=nudge(
                 {**base_crop, **(computed.get(source["id"]) or {}),
                  **(entry.get("crop") or {})},
@@ -312,7 +315,44 @@ def resolve(value, people: dict[str, Person]) -> float:
 # assets
 
 
-def data_uri(path: Path) -> str:
+DEFAULT_ADJUST = {"brightness": 1.0, "contrast": 1.0, "saturation": 1.0}
+
+
+@lru_cache(maxsize=None)
+def _adjusted(path: str, brightness: float, contrast: float,
+              saturation: float) -> bytes:
+    """Re-encode a photo with its tone tweaked.
+
+    Done to the pixels rather than with an SVG filter so that the SVG, the
+    PNG and the WebP all agree — cairosvg's filter support is patchy — and
+    so the file in headshots/ is left alone.
+    """
+    from io import BytesIO
+
+    from PIL import Image, ImageEnhance
+
+    with Image.open(path) as im:
+        image = im.convert("RGBA" if "A" in im.getbands() else "RGB")
+    for enhancer, amount in ((ImageEnhance.Brightness, brightness),
+                             (ImageEnhance.Contrast, contrast),
+                             (ImageEnhance.Color, saturation)):
+        if amount != 1.0:
+            image = enhancer(image).enhance(amount)
+    buffer = BytesIO()
+    if image.mode == "RGBA":
+        image.save(buffer, "PNG")
+    else:
+        image.save(buffer, "JPEG", quality=92, subsampling=0)
+    return buffer.getvalue()
+
+
+def data_uri(path: Path, adjust: dict | None = None) -> str:
+    tone = {**DEFAULT_ADJUST, **(adjust or {})}
+    if tone != DEFAULT_ADJUST:
+        blob = _adjusted(str(path), tone["brightness"], tone["contrast"],
+                         tone["saturation"])
+        mime = "image/png" if blob[:4] == b"\x89PNG" else "image/jpeg"
+        return f"data:{mime};base64," + base64.b64encode(blob).decode()
     mime = MIME.get(path.suffix.lower(), "application/octet-stream")
     return f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode()
 
@@ -438,7 +478,7 @@ def draw_headshot(p: Person, theme: dict, ring_w: float, typo: dict) -> str:
     if p.photo is not None:
         out.append(
             f'<image clip-path="url(#{clip})" {placement(p)} '
-            f'href="{data_uri(p.photo)}"/>'
+            f'href="{data_uri(p.photo, p.adjust)}"/>'
         )
     else:
         out.append(

@@ -281,6 +281,8 @@ people:
     name: Philip Chang
     role: Outreach Coordinator
     affiliation: Florida
+    # backlit sunset shot; his face falls into shadow
+    adjust: {brightness: 1.18}
     style: sm
     layout: below
     at: [1522, 940]
