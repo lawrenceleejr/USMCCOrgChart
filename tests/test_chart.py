@@ -81,7 +81,9 @@ def test_renders_both_themes(cfg, people):
         svg = render.render(cfg, theme, people, FONTS)
         assert svg.startswith("<svg") and svg.rstrip().endswith("</svg>")
         # transparent by construction: nothing paints the full canvas
-        assert 'width="2000" height="1379"' in svg
+        w, h = cfg["canvas"]["width"], cfg["canvas"]["height"]
+        assert f'width="{w}" height="{h}"' in svg
+        assert "<rect" not in svg.split("<style>")[0]
         for person in people.values():
             assert f'id="node-{person.id}"' in svg
 

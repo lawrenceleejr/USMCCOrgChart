@@ -20,7 +20,7 @@ meta:
 
 canvas:
   width: 2000
-  height: 1379
+  height: 1460
 
 typography:
   # Display face: title and names. Secondary face: roles, affiliations,
@@ -129,7 +129,10 @@ connectors:
   # communications coordinator -> deputy -> coordinators
   - [["kennedy:cx", 647], ["kennedy:cx", 873]]
   - [["kennedy:cx", 790], [1960, 790]]
-  - [[1190, 873], [1854, 873]]
+  - [[1190, 873], [1600, 873]]
+  # speakers committee, hanging from the council rather than from one rep
+  - [[950, 647], [950, 1160]]
+  - [[810, 1160], [1140, 1160]]
   # accelerator rep -> working groups
   - [["stratakis:cx", 647], ["stratakis:cx", 873]]
   - [[60, 873], [650, 873]]
@@ -245,11 +248,11 @@ people:
     at: [1522, 940]
   - id: orimoto
     name: Toyoko Orimoto
-    role: Speakers Committee
+    role: [Speakers Committee, Inreach Coordinator]
     affiliation: Northeastern
     style: sm
     layout: below
-    at: [1754, 940]
+    at: [860, 1230]
 
   - id: black
     name: Kevin Black
@@ -257,7 +260,7 @@ people:
     affiliation: Wisconsin
     style: sm
     layout: below
-    at: [1754, 940]
+    at: [1090, 1230]
 
 # Both themes paint on a transparent background; only the ink changes.
 themes:
