@@ -184,6 +184,8 @@ people:
     style: lg
     layout: left
     at: [1512, 568]
+    # wide shot in the tunnel; keeps the hard hat inside the circle
+    crop: {zoom: 2.0, dx: 15, dy: 20}
 
   - id: dipetrillo
     name: Karri Folan DiPetrillo
@@ -215,6 +217,8 @@ people:
     style: sm
     layout: below
     at: [350, 940]
+    # the ORNL sign fills the frame; he stands right of centre
+    crop: {zoom: 2.2, dx: -42, dy: 43}
   - id: hedges
     name: Mike Hedges
     role: Target
@@ -251,6 +255,8 @@ people:
     style: sm
     layout: below
     at: [1522, 940]
+    # beach shot, subject small and high in the frame
+    crop: {zoom: 1.45, dx: 4, dy: 19}
   - id: orimoto
     name: Toyoko Orimoto
     role: Inreach Coordinator

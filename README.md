@@ -85,9 +85,29 @@ A `defaults: {crop: {...}}` block sets the starting point for everyone.
 Photos are embedded in the SVG as data URIs, which makes each SVG standalone
 but also fairly large — that is the intended trade.
 
+### From the USMCC website
+
+Most people already have a photo on the website, at a far better
+resolution than any crop of a rendered chart:
+
+```
+git clone https://github.com/lawrenceleejr/usmccwebsite /tmp/usmccwebsite
+scripts/fetch-headshots-from-site.py --site /tmp/usmccwebsite
+```
+
+It matches each person to their `content/all_people/<Name>/` (or
+`content/leadership/<slug>/`) directory and copies the largest photo. Where
+the directory name differs from the name on the chart, the person carries a
+`photo_source:` key in the steering file.
+
+The site reuses one default portrait across most of its entries, and that
+placeholder outresolves some real photos, so any image shared by three or
+more people is skipped rather than copied in as somebody's face. Anyone it
+skips keeps whatever is already in `headshots/`.
+
 ### Extracting from an existing chart image
 
-To bootstrap from a rendered chart rather than original photos:
+For anyone the website has no photo of, crop them out of a rendered chart:
 
 ```
 scripts/extract-headshots.py path/to/usmcc-leadership.png [--pad 0.1] [--mask]
