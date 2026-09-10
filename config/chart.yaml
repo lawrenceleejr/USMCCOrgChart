@@ -136,7 +136,9 @@ connectors:
   - [[60, 873], [650, 873]]
 
 # Headshots are looked up in headshots/ as <id>.<jpg|jpeg|png|webp>, or by
-# an explicit `photo:` filename. A missing file renders as a soft initials
+# an explicit `photo:` filename. `photo_source:` names the person's
+# directory on the USMCC website when it differs from their name here, for
+# scripts/fetch-headshots-from-site.py. A missing file renders as a soft initials
 # placeholder so the chart always builds.
 people:
   - id: jindariani
@@ -185,6 +187,7 @@ people:
 
   - id: dipetrillo
     name: Karri Folan DiPetrillo
+    photo_source: Karri DiPetrillo
     role: Deputy Experimental Representative
     affiliation: Chicago
     style: md
@@ -220,7 +223,7 @@ people:
     layout: below
     at: [570, 940]
   - id: bagdley
-    name: Karie Bagdley
+    name: Karie Badgley
     role: Magnets
     affiliation: FNAL
     style: sm
