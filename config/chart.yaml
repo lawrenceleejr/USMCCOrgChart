@@ -1,0 +1,244 @@
+# USMCC org chart — steering file.
+#
+# Everything the chart shows is declared here: the date stamp, the people,
+# where they sit on the canvas, and the connector lines between them.
+# Coordinates are plain SVG user units on the canvas defined below; the
+# origin is the top-left corner.
+#
+# Anchors: any coordinate may be written as a string "<person-id>:<anchor>"
+# instead of a number. Anchors are cx, cy, top, bottom, left, right and
+# refer to that person's headshot circle. Use them so lines follow people
+# when a headshot is nudged.
+
+meta:
+  title: USMCC Leadership
+  # ---- set the date stamp here -------------------------------------------
+  date: Nov 2025
+  # ------------------------------------------------------------------------
+  # Base name for the rendered files, e.g. out/usmcc-org-chart-light.svg
+  basename: usmcc-org-chart
+
+canvas:
+  width: 2000
+  height: 1379
+
+typography:
+  # Display face: title and names. Secondary face: roles, affiliations,
+  # labels and the date stamp. Both are embedded in the SVG from fonts/.
+  display:
+    family: Lato
+    stack: "Lato, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+  secondary:
+    family: Source Sans Pro
+    stack: "'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif"
+  title:
+    font: display
+    size: 86
+    weight: 700
+    at: [1000, 150]
+  date:
+    font: secondary
+    size: 27
+    weight: 400
+    at: [1000, 212]
+
+# Line weights and the headshot ring, shared by both themes.
+strokes:
+  connector: 3.5
+  box: 1.8
+  ring: 2.5
+  box_radius: 16
+
+# Text geometry for each node size. `layout: left` puts the text to the
+# right of the headshot; `layout: below` centres it underneath.
+styles:
+  lg:
+    r: 57
+    gap: 16
+    name: {font: display, size: 28, weight: 700}
+    meta: {font: secondary, size: 18, weight: 400}
+    dy: {name: -20, role: 8, affiliation: 34}
+  md:
+    r: 50
+    gap: 15
+    name: {font: display, size: 25, weight: 700}
+    meta: {font: secondary, size: 17, weight: 400}
+    dy: {name: -18, role: 7, affiliation: 31}
+  sm:
+    r: 47
+    gap: 0
+    name: {font: display, size: 26, weight: 700}
+    meta: {font: secondary, size: 17, weight: 400}
+    dy: {name: 92, role: 120, affiliation: 146}
+
+# Rounded containers drawn behind the nodes. box: [x, y, width, height]
+groups:
+  - id: strategy
+    box: [40, 270, 188, 358]
+    label:
+      lines: [Leadership, Strategy, Group]
+      at: [134, 320]
+      font: secondary
+      size: 21
+      align: middle
+      line_height: 27
+  - id: council
+    box: [264, 270, 1576, 358]
+    label:
+      lines: [Elected Leadership Council]
+      at: [285, 318]
+      font: secondary
+      size: 21
+      align: start
+
+# Orthogonal connector lines, each a polyline of points.
+connectors:
+  # chair / vice-chair tie bar down to the council bus
+  - [[705, 437], [1430, 437]]
+  - [[1078, 437], [1078, 465]]
+  - [[297, 465], [1793, 465]]
+  # experimental rep -> deputy
+  - [["pagangriso:cx", 628], ["pagangriso:cx", 757], [1148, 757]]
+  # communications coordinator -> deputy -> coordinators
+  - [["kennedy:cx", 628], ["kennedy:cx", 868]]
+  - [["kennedy:cx", 757], [1960, 757]]
+  - [[1205, 868], [1840, 868]]
+  # accelerator rep -> working groups
+  - [["stratakis:cx", 628], ["stratakis:cx", 868]]
+  - [[60, 868], [650, 868]]
+
+# Headshots are looked up in headshots/ as <id>.<jpg|jpeg|png|webp>, or by
+# an explicit `photo:` filename. A missing file renders as a soft initials
+# placeholder so the chart always builds.
+people:
+  - id: jindariani
+    name: Sergo Jindariani
+    role: Chair
+    affiliation: FNAL
+    style: lg
+    layout: left
+    at: [766, 348]
+  - id: holmes
+    name: Tova Holmes
+    role: Vice Chair
+    affiliation: Tennessee
+    style: lg
+    layout: left
+    at: [1145, 348]
+
+  - id: stratakis
+    name: Diktys Stratakis
+    role: Accelerator Representative
+    affiliation: FNAL
+    style: lg
+    layout: left
+    at: [348, 568]
+  - id: pagangriso
+    name: Simone Pagan Griso
+    role: Experimental Representative
+    affiliation: LBNL
+    style: lg
+    layout: left
+    at: [727, 568]
+  - id: meade
+    name: Patrick Meade
+    role: Theory Representative
+    affiliation: Stony Brook
+    style: lg
+    layout: left
+    at: [1148, 568]
+  - id: kennedy
+    name: Kiley Kennedy
+    role: Communications Coordinator
+    affiliation: Princeton
+    style: lg
+    layout: left
+    at: [1512, 568]
+
+  - id: dipetrillo
+    name: Karri Folan DiPetrillo
+    role: Deputy Experimental Representative
+    affiliation: Chicago
+    style: md
+    layout: left
+    at: [820, 693]
+  - id: lee
+    name: Lawrence Lee
+    role: Deputy Communications Coordinator
+    affiliation: Tennessee
+    style: md
+    layout: left
+    at: [1620, 693]
+
+  - id: berg
+    name: J. Scott Berg
+    role: Design
+    affiliation: BNL
+    style: sm
+    layout: below
+    at: [130, 925]
+  - id: hoover
+    name: Austin Hoover
+    role: Proton Driver
+    affiliation: ORNL
+    style: sm
+    layout: below
+    at: [350, 925]
+  - id: hedges
+    name: Mike Hedges
+    role: Target
+    affiliation: FNAL
+    style: sm
+    layout: below
+    at: [570, 925]
+  - id: bagdley
+    name: Karie Bagdley
+    role: Magnets
+    affiliation: FNAL
+    style: sm
+    layout: below
+    at: [238, 1132]
+  - id: nanni
+    name: Emilio Nanni
+    role: RF
+    affiliation: SLAC
+    style: sm
+    layout: below
+    at: [458, 1132]
+
+  - id: de
+    name: Kaushik De
+    role: Gov't Relations Coordinator
+    affiliation: UT Arlington
+    style: sm
+    layout: below
+    at: [1305, 925]
+  - id: chang
+    name: Philip Chang
+    role: Outreach Coordinator
+    affiliation: Florida
+    style: sm
+    layout: below
+    at: [1522, 925]
+  - id: orimoto
+    name: Toyoko Orimoto
+    role: Inreach Coordinator
+    affiliation: Northeastern
+    style: sm
+    layout: below
+    at: [1742, 925]
+
+# Both themes paint on a transparent background; only the ink changes.
+themes:
+  light:
+    ink: "#111111"
+    muted: "#4d4d4d"
+    line: "#111111"
+    ring: "#111111"
+    placeholder: "#111111"
+  dark:
+    ink: "#f2f2f2"
+    muted: "#bfbfbf"
+    line: "#f2f2f2"
+    ring: "#f2f2f2"
+    placeholder: "#f2f2f2"
