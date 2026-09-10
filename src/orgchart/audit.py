@@ -13,8 +13,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .render import (Person, group_boxes, group_text_lines, person_boxes,
-                     resolve)
+from .render import (Person, grid_cells, group_boxes, group_text_lines,
+                     person_boxes, resolve)
 
 DEFAULTS = {
     "circle_to_circle": 24.0,
@@ -87,6 +87,14 @@ def box_segments(box):
 
 def collect(cfg: dict, people: dict[str, Person], fonts: Path):
     circles = [(p.id, p.cx, p.cy, p.r) for p in people.values()]
+    boxes_early = group_boxes(cfg, people, fonts)
+    # circles in a group's grid are drawn ink too, so the audit measures
+    # them; only their own box may cut through them, by design
+    for g in cfg.get("groups", []):
+        if not g.get("grid"):
+            continue
+        for i, (cx, cy) in enumerate(grid_cells(g, boxes_early[g["id"]])):
+            circles.append((f"{g['id']}:grid{i}", cx, cy, g["grid"]["r"]))
 
     texts = []
     for p in people.values():
@@ -154,8 +162,13 @@ def audit(cfg: dict, people: dict[str, Person], fonts: Path) -> list[Violation]:
         if gap < required - 1e-6:
             out.append(Violation(kind, a, b, gap, required))
 
+    def grid_of(cid: str) -> str | None:
+        return cid.split(":grid")[0] if ":grid" in cid else None
+
     for i, (ida, ax, ay, ar) in enumerate(circles):
         for idb, bx, by, br in circles[i + 1:]:
+            if grid_of(ida) and grid_of(ida) == grid_of(idb):
+                continue  # a lattice sets its own spacing
             check("circle/circle", ida, idb,
                   math.hypot(ax - bx, ay - by) - ar - br,
                   limits["circle_to_circle"])
@@ -183,6 +196,8 @@ def audit(cfg: dict, people: dict[str, Person], fonts: Path) -> list[Violation]:
     for lid, seg in lines:
         for cid, cx, cy, r in circles:
             gid = lid[4:].split("[")[0] if lid.startswith("box:") else None
+            if gid and grid_of(cid) == gid:
+                continue  # the box frames its own grid, cutting the edge
             if gid and cid in members and owner[cid] == gid:
                 required = limits["box_padding"]
             else:
@@ -198,6 +213,8 @@ def audit(cfg: dict, people: dict[str, Person], fonts: Path) -> list[Violation]:
     margin = limits["canvas_margin"]
     w, h = cfg["canvas"]["width"], cfg["canvas"]["height"]
     for cid, cx, cy, r in circles:
+        if grid_of(cid):
+            continue  # clipped by its box, which is itself inside the canvas
         edge = min(cx - r, cy - r, w - (cx + r), h - (cy + r))
         check("canvas", cid, "edge", edge, margin)
     for tid, *box in texts:

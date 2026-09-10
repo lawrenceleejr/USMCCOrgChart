@@ -459,14 +459,20 @@ def grid_cells(group: dict, box: tuple) -> list[tuple[float, float]]:
     r, gap = spec["r"], spec.get("gap", 10)
     x, y, w, h = box
     want = 2 * r + gap
-    # Anchor a row and a column of centres on each border, then even the
-    # spacing out between them: the border cuts those circles in half and
-    # the crowd reads as continuing past the frame.
+    # `top` keeps a fraction of the box clear for the label; the lattice
+    # starts a full circle below it rather than being cut there.
+    first = y + h * spec.get("top", 0.0)
+    if spec.get("top"):
+        first += r
+    depth = y + h - first
+    # Anchor a column of centres on each side border and a row on the
+    # bottom one, then even the spacing out: those circles are cut in half
+    # and the crowd reads as continuing past the frame.
     cols = max(round(w / want), 1) + 1
-    rows = max(round(h / want), 1) + 1
+    rows = max(round(depth / want), 1) + 1
     step_x = w / (cols - 1) if cols > 1 else 0
-    step_y = h / (rows - 1) if rows > 1 else 0
-    return [(x + c * step_x, y + rw * step_y)
+    step_y = depth / (rows - 1) if rows > 1 else 0
+    return [(x + c * step_x, first + rw * step_y)
             for rw in range(rows) for c in range(cols)]
 
 

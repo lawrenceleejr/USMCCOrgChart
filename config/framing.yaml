@@ -12,6 +12,7 @@ holmes: {dx: 9.3, dy: -3.9, zoom: 1.149}
 hoover: {dx: -53.9, dy: 31.3, zoom: 2.463}
 jindariani: {dx: 10.5, dy: 4.9, zoom: 1.175}
 kennedy: {dx: 1.3, dy: 3.3, zoom: 1.894}
+leblanc: {dx: -50.5, dy: 3.4, zoom: 2.794}
 lee: {dx: 2.1, dy: -11.5, zoom: 1.23}
 meade: {dx: -3.3, dy: -13.6, zoom: 1.228}
 nanni: {dx: -5.1, dy: 22.4, zoom: 1.102}

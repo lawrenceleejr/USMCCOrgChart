@@ -106,15 +106,18 @@ groups:
     # by the border so the crowd reads as continuing past it. Photos fill the
     # cells in order; the rest stay as soft discs.
     grid:
-      r: 18
-      gap: 10
+      r: 26
+      gap: 12
+      # leave the top of the box to the label
+      top: 0.34
       photos: []
     label:
-      lines: [Leadership Strategy Group]
-      at: [0, -16]
+      lines: [Leadership, Strategy, Group]
+      at: [94, 50]
       font: secondary
-      size: 19
-      align: start
+      size: 21
+      align: middle
+      line_height: 27
   - id: council
     padding: 22
     members: [jindariani, holmes, stratakis, dipetrillo, meade, kennedy]
@@ -136,9 +139,11 @@ connectors:
   - [["kennedy:cx", 647], ["kennedy:cx", 873]]
   - [["kennedy:cx", 790], [1960, 790]]
   - [[1190, 873], [1854, 873]]
+  # experimental rep -> deputy
+  - [["dipetrillo:cx", 647], ["dipetrillo:cx", 790], [900, 790]]
   # speakers committee, hanging from the council rather than from one rep
-  - [[950, 647], [950, 1160]]
-  - [[810, 1160], [1140, 1160]]
+  - [[1170, 647], [1170, 1160]]
+  - [[810, 1160], [1170, 1160]]
   # accelerator rep -> working groups
   - [["stratakis:cx", 647], ["stratakis:cx", 873]]
   - [[60, 873], [650, 873]]
@@ -181,6 +186,14 @@ people:
     style: lg
     layout: left
     at: [727, 568]
+  - id: leblanc
+    name: Matt LeBlanc
+    role: Deputy Experimental Representative
+    affiliation: Brown
+    style: md
+    layout: left
+    at: [820, 716]
+
   - id: meade
     name: Patrick Meade
     role: Theory Representative
