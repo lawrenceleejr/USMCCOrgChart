@@ -65,8 +65,16 @@ strokes:
 # Text geometry for each node size. `layout: left` puts the text to the
 # right of the headshot; `layout: below` centres it underneath.
 styles:
+  # radii follow the source chart, where the chair and vice chair sit a
+  # little larger than the council and everyone below them
+  xl:
+    r: 60
+    gap: 16
+    name: {font: display, size: 28, weight: 700}
+    meta: {font: secondary, size: 18, weight: 400}
+    dy: {name: -20, role: 8, affiliation: 34}
   lg:
-    r: 57
+    r: 54
     gap: 16
     name: {font: display, size: 28, weight: 700}
     meta: {font: secondary, size: 18, weight: 400}
@@ -78,11 +86,11 @@ styles:
     meta: {font: secondary, size: 17, weight: 400}
     dy: {name: -18, role: 7, affiliation: 31}
   sm:
-    r: 47
+    r: 50
     gap: 0
     name: {font: display, size: 26, weight: 700}
     meta: {font: secondary, size: 17, weight: 400}
-    dy: {name: 92, role: 120, affiliation: 146}
+    dy: {name: 95, role: 123, affiliation: 149}
 
 # Rounded containers. A group with `members` is sized to enclose those
 # people (headshots and their labels) with `padding` of clear space, so the
@@ -135,14 +143,14 @@ people:
     name: Sergo Jindariani
     role: Chair
     affiliation: FNAL
-    style: lg
+    style: xl
     layout: left
     at: [766, 348]
   - id: holmes
     name: Tova Holmes
     role: Vice Chair
     affiliation: Tennessee
-    style: lg
+    style: xl
     layout: left
     at: [1145, 348]
 
