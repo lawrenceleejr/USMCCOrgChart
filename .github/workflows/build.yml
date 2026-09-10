@@ -1,0 +1,48 @@
+name: build chart
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install cairo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libcairo2
+
+      - name: Install dependencies
+        run: pip install --upgrade pip && pip install -e .
+
+      - name: Fetch fonts
+        run: ./scripts/fetch-fonts.sh
+
+      - name: Render chart
+        # --strict fails the build if anything in the layout is closer than
+        # the clearances in config/chart.yaml
+        run: python -m orgchart --strict --formats png webp
+
+      - name: Upload rasters
+        uses: actions/upload-artifact@v4
+        with:
+          name: usmcc-org-chart
+          path: |
+            out/*.png
+            out/*.webp
+          if-no-files-found: error
+
+      - name: Upload vectors
+        uses: actions/upload-artifact@v4
+        with:
+          name: usmcc-org-chart-svg
+          path: out/*.svg
+          if-no-files-found: error

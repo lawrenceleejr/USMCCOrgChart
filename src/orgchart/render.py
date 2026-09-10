@@ -50,6 +50,7 @@ class Person:
     cx: float
     cy: float
     photo: Path | None
+    crop: dict
 
     @property
     def r(self) -> float:
@@ -73,7 +74,11 @@ def find_photo(person: dict, headshots: Path) -> Path | None:
     return None
 
 
+DEFAULT_CROP = {"zoom": 1.0, "dx": 0.0, "dy": 0.0}
+
+
 def build_people(cfg: dict, headshots: Path) -> dict[str, Person]:
+    base_crop = {**DEFAULT_CROP, **(cfg.get("defaults", {}).get("crop") or {})}
     people = {}
     for entry in cfg["people"]:
         style = cfg["styles"][entry.get("style", "lg")]
@@ -88,8 +93,86 @@ def build_people(cfg: dict, headshots: Path) -> dict[str, Person]:
             cx=cx,
             cy=cy,
             photo=find_photo(entry, headshots),
+            crop={**base_crop, **(entry.get("crop") or {})},
         )
     return people
+
+
+def text_extent(cfg: dict, role: str, size: float, weight: int, content: str,
+                fonts: Path) -> tuple[float, float, float, float]:
+    """Ink box of a text run relative to its (x, baseline) anchor point."""
+    from . import metrics
+
+    return metrics.extent(fonts, cfg["typography"][role]["family"], weight,
+                          content, size)
+
+
+def person_boxes(p: Person, cfg: dict, fonts: Path) -> list[tuple]:
+    """Text ink boxes for a person, in absolute canvas coordinates."""
+    st, dy = p.style, p.style["dy"]
+    x = p.cx if p.layout == "below" else p.cx + p.r + st["gap"]
+    runs = [("name", p.name, st["name"]), ("role", p.role, st["meta"]),
+            ("affiliation", p.affiliation, st["meta"])]
+    boxes = []
+    for key, content, spec in runs:
+        if not content:
+            continue
+        role = spec.get("font", "display" if key == "name" else "secondary")
+        x0, y0, x1, y1 = text_extent(cfg, role, spec["size"], spec["weight"],
+                                     content, fonts)
+        w = x1 - x0
+        left = x + x0 - (w / 2 if p.layout == "below" else 0)
+        top = p.cy + dy[key] + y0
+        boxes.append((f"{p.id}.{key}", left, top, left + w, top + (y1 - y0)))
+    return boxes
+
+
+def group_boxes(cfg: dict, people: dict[str, Person],
+                fonts: Path) -> dict[str, tuple[float, float, float, float]]:
+    """Resolve every group container to (x, y, w, h).
+
+    A group with `members` is sized to enclose those people — headshots and
+    labels alike — with `padding` of clear space on every side, so a box can
+    never crop what it contains. `match_vertical` copies another group's top
+    and height, which keeps side-by-side containers aligned.
+    """
+    pad_default = cfg.get("clearance", {}).get("box_padding", 20)
+    resolved: dict[str, tuple] = {}
+    pending = list(cfg.get("groups", []))
+    for _ in range(len(pending) + 1):
+        deferred = []
+        for g in pending:
+            if "box" in g:
+                resolved[g["id"]] = tuple(g["box"])
+                continue
+            pad = g.get("padding", pad_default)
+            if g.get("members"):
+                xs, ys = [], []
+                for pid in g["members"]:
+                    person = people[pid]
+                    xs += [person.cx - person.r, person.cx + person.r]
+                    ys += [person.cy - person.r, person.cy + person.r]
+                    for _n, x0, y0, x1, y1 in person_boxes(person, cfg, fonts):
+                        xs += [x0, x1]
+                        ys += [y0, y1]
+                x, y = min(xs) - pad, min(ys) - pad
+                w, h = max(xs) + pad - x, max(ys) + pad - y
+            else:
+                x, y, w, h = g.get("x", 0), 0, g.get("width", 0), 0
+            ref = g.get("match_vertical")
+            if ref:
+                if ref not in resolved:
+                    deferred.append(g)
+                    continue
+                _, ry, _, rh = resolved[ref]
+                y, h = ry, rh
+            resolved[g["id"]] = (g.get("x", x), y, g.get("width", w), h)
+        pending = deferred
+        if not pending:
+            break
+    if pending:
+        raise ValueError("unresolvable match_vertical chain in groups")
+    return resolved
 
 
 def resolve(value, people: dict[str, Person]) -> float:
@@ -158,6 +241,14 @@ def font(typo: dict, role: str) -> dict:
     return typo[role]
 
 
+def rel(path: Path) -> str:
+    """Repo-relative path when possible, absolute otherwise."""
+    try:
+        return str(path.relative_to(REPO))
+    except ValueError:
+        return str(path)
+
+
 def fmt(value: float) -> str:
     return f"{value:g}"
 
@@ -175,6 +266,39 @@ def text(x, y, content, *, size, weight, fill, anchor="start",
     )
 
 
+def image_size(path: Path) -> tuple[int, int] | None:
+    """Pixel size of a headshot, or None when Pillow is unavailable."""
+    if importlib.util.find_spec("PIL") is None:
+        return None
+    from PIL import Image
+
+    with Image.open(path) as im:
+        return im.size
+
+
+def placement(p: Person) -> str:
+    """Fit a headshot into its circle.
+
+    The short edge of the source is scaled to the circle's diameter, so a
+    rectangular photo is cropped rather than squashed. `zoom` tightens the
+    crop around the subject, `dx`/`dy` shift the source inside the circle in
+    canvas units (positive dy moves the photo down, i.e. shows more of the
+    top of the frame).
+    """
+    size = image_size(p.photo)
+    if size is None:  # no Pillow: let the renderer centre-crop for us
+        return (f'x="{fmt(p.cx - p.r)}" y="{fmt(p.cy - p.r)}" '
+                f'width="{fmt(2 * p.r)}" height="{fmt(2 * p.r)}" '
+                f'preserveAspectRatio="xMidYMid slice"')
+    src_w, src_h = size
+    scale = (2 * p.r) / min(src_w, src_h) * float(p.crop["zoom"])
+    w, h = src_w * scale, src_h * scale
+    x = p.cx - w / 2 + float(p.crop["dx"])
+    y = p.cy - h / 2 + float(p.crop["dy"])
+    return (f'x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" '
+            f'preserveAspectRatio="none"')
+
+
 def draw_headshot(p: Person, theme: dict, ring_w: float, typo: dict) -> str:
     clip = f"clip-{p.id}"
     out = [
@@ -183,9 +307,7 @@ def draw_headshot(p: Person, theme: dict, ring_w: float, typo: dict) -> str:
     ]
     if p.photo is not None:
         out.append(
-            f'<image clip-path="url(#{clip})" x="{fmt(p.cx - p.r)}" '
-            f'y="{fmt(p.cy - p.r)}" width="{fmt(2 * p.r)}" '
-            f'height="{fmt(2 * p.r)}" preserveAspectRatio="xMidYMid slice" '
+            f'<image clip-path="url(#{clip})" {placement(p)} '
             f'href="{data_uri(p.photo)}"/>'
         )
     else:
@@ -228,8 +350,9 @@ def draw_person(p: Person, theme: dict, ring_w: float, typo: dict) -> str:
     return "".join(out)
 
 
-def draw_group(group: dict, theme: dict, strokes: dict, typo: dict) -> str:
-    x, y, w, h = group["box"]
+def draw_group(group: dict, box: tuple, theme: dict, strokes: dict,
+               typo: dict) -> str:
+    x, y, w, h = box
     out = [
         f'<rect x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" '
         f'rx="{fmt(strokes["box_radius"])}" fill="none" '
@@ -237,7 +360,9 @@ def draw_group(group: dict, theme: dict, strokes: dict, typo: dict) -> str:
     ]
     label = group.get("label")
     if label:
-        lx, ly = label["at"]
+        # label offsets are relative to the box corner, so a computed box
+        # carries its label with it
+        lx, ly = x + label["at"][0], y + label["at"][1]
         step = label.get("line_height", label["size"] + 6)
         for i, line in enumerate(label["lines"]):
             out.append(text(lx, ly + i * step, line, size=label["size"],
@@ -259,7 +384,7 @@ def draw_connector(points, people, theme, width) -> str:
 
 
 def render(cfg: dict, theme_name: str, people: dict[str, Person],
-           fonts: Path) -> str:
+           fonts: Path, boxes: dict | None = None) -> str:
     theme = cfg["themes"][theme_name]
     strokes = cfg["strokes"]
     typo = cfg["typography"]
@@ -287,8 +412,10 @@ def render(cfg: dict, theme_name: str, people: dict[str, Person],
                       anchor="middle",
                       font=font(typo, typo["date"].get("font", "secondary"))))
 
+    boxes = boxes if boxes is not None else group_boxes(cfg, people, fonts)
     for group in cfg.get("groups", []):
-        parts.append(draw_group(group, theme, strokes, typo))
+        parts.append(draw_group(group, boxes[group["id"]], theme, strokes,
+                                typo))
     for points in cfg.get("connectors", []):
         parts.append(draw_connector(points, people, theme, strokes["connector"]))
     for p in people.values():
@@ -318,18 +445,36 @@ def fontconfig_env(fonts: Path) -> dict:
     return env
 
 
-def write_png(svg_path: Path, png_path: Path, scale: float, fonts: Path) -> bool:
+def write_raster(svg_path: Path, scale: float, fonts: Path,
+                 formats: list[str], webp_quality: int,
+                 webp_lossless: bool) -> list[Path]:
+    """Rasterise one SVG into every requested format, alpha preserved."""
     if importlib.util.find_spec("cairosvg") is None:
-        return False
+        return []
     # cairo resolves fonts through fontconfig, which reads its configuration
     # when the library is first loaded, so the environment has to be set
     # before cairosvg is imported.
     os.environ.update(fontconfig_env(fonts))
     import cairosvg
 
-    cairosvg.svg2png(url=str(svg_path), write_to=str(png_path), scale=scale,
-                     background_color="transparent")
-    return True
+    png_bytes = cairosvg.svg2png(url=str(svg_path), scale=scale,
+                                 background_color="transparent")
+    written = []
+    if "png" in formats:
+        out = svg_path.with_suffix(".png")
+        out.write_bytes(png_bytes)
+        written.append(out)
+    if "webp" in formats:
+        from io import BytesIO
+
+        from PIL import Image
+
+        out = svg_path.with_suffix(".webp")
+        with Image.open(BytesIO(png_bytes)) as im:
+            im.save(out, "WEBP", lossless=webp_lossless, quality=webp_quality,
+                    method=6, exact=True)
+        written.append(out)
+    return written
 
 
 # --------------------------------------------------------------------------
@@ -345,8 +490,18 @@ def main(argv=None) -> int:
     ap.add_argument("--themes", nargs="*", default=None,
                     help="themes to render (default: all in the config)")
     ap.add_argument("--scale", type=float, default=2.0,
-                    help="PNG scale factor relative to the SVG canvas")
-    ap.add_argument("--no-png", action="store_true")
+                    help="raster scale factor relative to the SVG canvas")
+    ap.add_argument("--formats", nargs="*", default=["png", "webp"],
+                    choices=["png", "webp"],
+                    help="raster formats to write alongside the SVG")
+    ap.add_argument("--webp-quality", type=int, default=92)
+    ap.add_argument("--webp-lossless", action="store_true")
+    ap.add_argument("--no-check", action="store_true",
+                    help="skip the layout clearance audit")
+    ap.add_argument("--check-only", action="store_true",
+                    help="run the layout audit and write nothing")
+    ap.add_argument("--strict", action="store_true",
+                    help="fail the build when the audit finds a violation")
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
@@ -363,18 +518,42 @@ def main(argv=None) -> int:
               "embed Lato and Source Sans Pro; falling back to system sans",
               file=sys.stderr)
 
+    violations = []
+    if not args.no_check:
+        from .audit import audit
+
+        violations = audit(cfg, people, args.fonts)
+        for v in violations:
+            print(f"clearance: {v}", file=sys.stderr)
+        if violations and args.strict:
+            print(f"{len(violations)} clearance violation(s); refusing to "
+                  f"build with --strict", file=sys.stderr)
+            return 1
+
+    if args.check_only:
+        print("layout clean" if not violations else
+              f"{len(violations)} clearance violation(s)")
+        return 1 if violations else 0
+
+    boxes = group_boxes(cfg, people, args.fonts)
     base = cfg["meta"].get("basename", "org-chart")
     for theme_name in (args.themes or list(cfg["themes"])):
         svg_path = args.out / f"{base}-{theme_name}.svg"
-        svg_path.write_text(render(cfg, theme_name, people, args.fonts))
-        print(f"wrote {svg_path.relative_to(REPO)}")
-        if not args.no_png:
-            png_path = svg_path.with_suffix(".png")
-            if write_png(svg_path, png_path, args.scale, args.fonts):
-                print(f"wrote {png_path.relative_to(REPO)}")
+        svg_path.write_text(render(cfg, theme_name, people, args.fonts, boxes))
+        print(f"wrote {rel(svg_path)}")
+        if args.formats:
+            written = write_raster(svg_path, args.scale, args.fonts,
+                                   args.formats, args.webp_quality,
+                                   args.webp_lossless)
+            if written:
+                for out in written:
+                    print(f"wrote {rel(out)}")
             else:
-                print("note: cairosvg not installed — skipping PNG "
+                print("note: cairosvg not installed — skipping rasters "
                       "(pip install cairosvg)", file=sys.stderr)
+    if violations:
+        print(f"note: {len(violations)} clearance violation(s) above",
+              file=sys.stderr)
     return 0
 
 

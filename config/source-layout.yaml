@@ -1,0 +1,26 @@
+# Where each face sits in the original chart image, in that image's own
+# coordinate space. Used only by scripts/extract-headshots.py to lift the
+# headshots out of a reference render; the live layout in chart.yaml has
+# moved on from these positions and must not be used for extraction.
+#
+# canvas: the reference image's nominal size. Any scan or export of the same
+# image is scaled to match, so a 4000px-wide copy works unchanged.
+canvas: [2000, 1379]
+
+faces:
+  jindariani: [766, 348, 57]
+  holmes:     [1145, 348, 57]
+  stratakis:  [348, 568, 57]
+  pagangriso: [727, 568, 57]
+  meade:      [1148, 568, 57]
+  kennedy:    [1512, 568, 57]
+  dipetrillo: [820, 693, 50]
+  lee:        [1620, 693, 50]
+  berg:       [130, 925, 47]
+  hoover:     [350, 925, 47]
+  hedges:     [570, 925, 47]
+  bagdley:    [238, 1132, 47]
+  nanni:      [458, 1132, 47]
+  de:         [1305, 925, 47]
+  chang:      [1522, 925, 47]
+  orimoto:    [1742, 925, 47]

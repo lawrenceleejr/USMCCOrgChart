@@ -42,6 +42,19 @@ typography:
     weight: 400
     at: [1000, 212]
 
+# Minimum clear space, in canvas units, enforced by the layout audit that
+# runs on every build (`--strict` turns a violation into a build failure).
+# box_padding is also the space a computed group box leaves around whatever
+# it contains.
+clearance:
+  circle_to_circle: 24
+  circle_to_text: 14
+  text_to_text: 14
+  line_to_circle: 16
+  line_to_text: 12
+  box_padding: 22
+  canvas_margin: 20
+
 # Line weights and the headshot ring, shared by both themes.
 strokes:
   connector: 3.5
@@ -71,22 +84,29 @@ styles:
     meta: {font: secondary, size: 17, weight: 400}
     dy: {name: 92, role: 120, affiliation: 146}
 
-# Rounded containers drawn behind the nodes. box: [x, y, width, height]
+# Rounded containers. A group with `members` is sized to enclose those
+# people (headshots and their labels) with `padding` of clear space, so the
+# border can never cut through a circle. `match_vertical` copies another
+# group's top and height. Label `at` is an offset from the box's top-left
+# corner.
 groups:
   - id: strategy
-    box: [40, 270, 188, 358]
+    x: 40
+    width: 188
+    match_vertical: council
     label:
       lines: [Leadership, Strategy, Group]
-      at: [134, 320]
+      at: [94, 50]
       font: secondary
       size: 21
       align: middle
       line_height: 27
   - id: council
-    box: [264, 270, 1576, 358]
+    padding: 22
+    members: [jindariani, holmes, stratakis, pagangriso, meade, kennedy]
     label:
       lines: [Elected Leadership Council]
-      at: [285, 318]
+      at: [21, 48]
       font: secondary
       size: 21
       align: start
@@ -98,14 +118,14 @@ connectors:
   - [[1078, 437], [1078, 465]]
   - [[297, 465], [1793, 465]]
   # experimental rep -> deputy
-  - [["pagangriso:cx", 628], ["pagangriso:cx", 757], [1148, 757]]
+  - [["pagangriso:cx", 647], ["pagangriso:cx", 790], [1148, 790]]
   # communications coordinator -> deputy -> coordinators
-  - [["kennedy:cx", 628], ["kennedy:cx", 868]]
-  - [["kennedy:cx", 757], [1960, 757]]
-  - [[1205, 868], [1840, 868]]
+  - [["kennedy:cx", 647], ["kennedy:cx", 873]]
+  - [["kennedy:cx", 790], [1960, 790]]
+  - [[1190, 873], [1854, 873]]
   # accelerator rep -> working groups
-  - [["stratakis:cx", 628], ["stratakis:cx", 868]]
-  - [[60, 868], [650, 868]]
+  - [["stratakis:cx", 647], ["stratakis:cx", 873]]
+  - [[60, 873], [650, 873]]
 
 # Headshots are looked up in headshots/ as <id>.<jpg|jpeg|png|webp>, or by
 # an explicit `photo:` filename. A missing file renders as a soft initials
@@ -161,14 +181,14 @@ people:
     affiliation: Chicago
     style: md
     layout: left
-    at: [820, 693]
+    at: [820, 716]
   - id: lee
     name: Lawrence Lee
     role: Deputy Communications Coordinator
     affiliation: Tennessee
     style: md
     layout: left
-    at: [1620, 693]
+    at: [1620, 716]
 
   - id: berg
     name: J. Scott Berg
@@ -176,35 +196,35 @@ people:
     affiliation: BNL
     style: sm
     layout: below
-    at: [130, 925]
+    at: [130, 940]
   - id: hoover
     name: Austin Hoover
     role: Proton Driver
     affiliation: ORNL
     style: sm
     layout: below
-    at: [350, 925]
+    at: [350, 940]
   - id: hedges
     name: Mike Hedges
     role: Target
     affiliation: FNAL
     style: sm
     layout: below
-    at: [570, 925]
+    at: [570, 940]
   - id: bagdley
     name: Karie Bagdley
     role: Magnets
     affiliation: FNAL
     style: sm
     layout: below
-    at: [238, 1132]
+    at: [238, 1158]
   - id: nanni
     name: Emilio Nanni
     role: RF
     affiliation: SLAC
     style: sm
     layout: below
-    at: [458, 1132]
+    at: [458, 1158]
 
   - id: de
     name: Kaushik De
@@ -212,21 +232,21 @@ people:
     affiliation: UT Arlington
     style: sm
     layout: below
-    at: [1305, 925]
+    at: [1290, 940]
   - id: chang
     name: Philip Chang
     role: Outreach Coordinator
     affiliation: Florida
     style: sm
     layout: below
-    at: [1522, 925]
+    at: [1522, 940]
   - id: orimoto
     name: Toyoko Orimoto
     role: Inreach Coordinator
     affiliation: Northeastern
     style: sm
     layout: below
-    at: [1742, 925]
+    at: [1754, 940]
 
 # Both themes paint on a transparent background; only the ink changes.
 themes:
