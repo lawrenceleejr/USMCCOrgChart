@@ -13,7 +13,7 @@
 meta:
   title: USMCC Leadership
   # ---- set the date stamp here -------------------------------------------
-  date: Nov 2025
+  date: Sep 2026
   # ------------------------------------------------------------------------
   # Base name for the rendered files, e.g. out/usmcc-org-chart-light.svg
   basename: usmcc-org-chart
@@ -111,7 +111,7 @@ groups:
       line_height: 27
   - id: council
     padding: 22
-    members: [jindariani, holmes, stratakis, pagangriso, meade, kennedy]
+    members: [jindariani, holmes, stratakis, dipetrillo, meade, kennedy]
     label:
       lines: [Elected Leadership Council]
       at: [21, 48]
@@ -126,7 +126,6 @@ connectors:
   - [[1078, 437], [1078, 465]]
   - [[297, 465], [1793, 465]]
   # experimental rep -> deputy
-  - [["pagangriso:cx", 647], ["pagangriso:cx", 790], [1148, 790]]
   # communications coordinator -> deputy -> coordinators
   - [["kennedy:cx", 647], ["kennedy:cx", 873]]
   - [["kennedy:cx", 790], [1960, 790]]
@@ -163,10 +162,11 @@ people:
     style: lg
     layout: left
     at: [348, 568]
-  - id: pagangriso
-    name: Simone Pagan Griso
+  - id: dipetrillo
+    name: Karri Folan DiPetrillo
+    photo_source: Karri DiPetrillo
     role: Experimental Representative
-    affiliation: LBNL
+    affiliation: Chicago
     style: lg
     layout: left
     at: [727, 568]
@@ -185,14 +185,6 @@ people:
     layout: left
     at: [1512, 568]
 
-  - id: dipetrillo
-    name: Karri Folan DiPetrillo
-    photo_source: Karri DiPetrillo
-    role: Deputy Experimental Representative
-    affiliation: Chicago
-    style: md
-    layout: left
-    at: [820, 716]
   - id: lee
     name: Lawrence Lee
     role: Deputy Communications Coordinator
@@ -253,8 +245,16 @@ people:
     at: [1522, 940]
   - id: orimoto
     name: Toyoko Orimoto
-    role: Inreach Coordinator
+    role: Speakers Committee
     affiliation: Northeastern
+    style: sm
+    layout: below
+    at: [1754, 940]
+
+  - id: black
+    name: Kevin Black
+    role: Speakers Committee
+    affiliation: Wisconsin
     style: sm
     layout: below
     at: [1754, 940]

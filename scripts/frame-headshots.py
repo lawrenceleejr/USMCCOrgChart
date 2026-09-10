@@ -140,7 +140,11 @@ def main(argv=None) -> int:
     cfg = yaml.safe_load(args.config.read_text())
     people = build_people(cfg, args.headshots)
 
-    framing, undetected, cramped, skipped = {}, [], [], []
+    # with --only, keep everyone else's framing rather than dropping it
+    framing = {}
+    if args.only and args.out.exists():
+        framing = {k: v for k, v in (yaml.safe_load(args.out.read_text()) or {}).items()}
+    undetected, cramped, skipped = [], [], []
     for pid, person in people.items():
         if args.only and pid not in args.only:
             continue
