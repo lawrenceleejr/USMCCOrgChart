@@ -5,6 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   render:
     runs-on: ubuntu-latest
@@ -49,3 +52,49 @@ jobs:
           name: usmcc-org-chart-svg
           path: out/*.svg
           if-no-files-found: error
+
+  # deploy the built charts to GitHub Pages, from main only
+  pages:
+    needs: render
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install --upgrade pip && pip install PyYAML
+
+      - name: Download rasters
+        uses: actions/download-artifact@v4
+        with:
+          name: usmcc-org-chart
+          path: out
+
+      - name: Download vectors
+        uses: actions/download-artifact@v4
+        with:
+          name: usmcc-org-chart-svg
+          path: out
+
+      - name: Build site
+        run: python scripts/build-site.py --repo "${{ github.repository }}"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
