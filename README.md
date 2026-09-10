@@ -82,6 +82,30 @@ per person adjust what the circle shows:
 
 A `defaults: {crop: {...}}` block sets the starting point for everyone.
 
+### Automatic framing
+
+Rather than setting those knobs by hand, let the framer place every face
+the same way — nose at the centre of the circle, whole head inside it:
+
+```
+scripts/fetch-face-model.sh      # one-off, ~230KB
+scripts/frame-headshots.py
+```
+
+It detects each face with YuNet, which returns the nose tip as a landmark,
+estimates the head from interocular distance (a steadier ruler than the
+detection box), and solves for the zoom and offset that centre the nose and
+make the head as large as it can be while staying inside the circle. Where
+a source is cropped too tightly to do both, coverage wins — a circle is
+never left with a transparent gap — and the shortfall is reported so you
+know which photos want a roomier original.
+
+The result is written to `config/framing.yaml`, which the renderer merges
+*under* any `crop:` in the steering file, so a hand-written override always
+wins. Photos below 160px or detected with low confidence are left alone
+rather than framed on a guess. Only re-framing needs the model; building
+the chart just reads the committed YAML.
+
 Photos are embedded in the SVG as data URIs, which makes each SVG standalone
 but also fairly large — that is the intended trade.
 

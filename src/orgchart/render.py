@@ -77,8 +77,17 @@ def find_photo(person: dict, headshots: Path) -> Path | None:
 DEFAULT_CROP = {"zoom": 1.0, "dx": 0.0, "dy": 0.0}
 
 
-def build_people(cfg: dict, headshots: Path) -> dict[str, Person]:
+def load_framing(path: Path | None) -> dict:
+    """Generated per-person crop knobs, if they have been computed."""
+    if path is None or not path.exists():
+        return {}
+    return yaml.safe_load(path.read_text()) or {}
+
+
+def build_people(cfg: dict, headshots: Path,
+                 framing: Path | None = None) -> dict[str, Person]:
     base_crop = {**DEFAULT_CROP, **(cfg.get("defaults", {}).get("crop") or {})}
+    computed = load_framing(framing)
     people = {}
     for entry in cfg["people"]:
         style = cfg["styles"][entry.get("style", "lg")]
@@ -93,7 +102,9 @@ def build_people(cfg: dict, headshots: Path) -> dict[str, Person]:
             cx=cx,
             cy=cy,
             photo=find_photo(entry, headshots),
-            crop={**base_crop, **(entry.get("crop") or {})},
+            # generated framing sits under anything set by hand
+            crop={**base_crop, **(computed.get(entry["id"]) or {}),
+                  **(entry.get("crop") or {})},
         )
     return people
 
@@ -487,6 +498,9 @@ def main(argv=None) -> int:
     ap.add_argument("-o", "--out", type=Path, default=REPO / "out")
     ap.add_argument("--headshots", type=Path, default=REPO / "headshots")
     ap.add_argument("--fonts", type=Path, default=REPO / "fonts")
+    ap.add_argument("--framing", type=Path,
+                    default=REPO / "config" / "framing.yaml",
+                    help="generated crop knobs from frame-headshots.py")
     ap.add_argument("--themes", nargs="*", default=None,
                     help="themes to render (default: all in the config)")
     ap.add_argument("--scale", type=float, default=2.0,
@@ -505,7 +519,7 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
-    people = build_people(cfg, args.headshots)
+    people = build_people(cfg, args.headshots, args.framing)
     args.out.mkdir(parents=True, exist_ok=True)
 
     missing = [p.id for p in people.values() if p.photo is None]
