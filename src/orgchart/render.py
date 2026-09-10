@@ -97,7 +97,8 @@ DEFAULT_CROP = {"zoom": 1.0, "dx": 0.0, "dy": 0.0}
 def nudge(crop: dict, tweak: dict | None) -> dict:
     """Apply a hand tweak on top of a computed crop.
 
-    `dx`/`dy` shift the subject within the circle, in canvas units, and
+    `dx`/`dy` shift the subject within the circle, in canvas units —
+    negative dx moves them left, positive dy moves them down — and
     `scale` multiplies the framed zoom. They are relative, so re-running
     the framer does not throw the tweak away.
     """
@@ -105,8 +106,8 @@ def nudge(crop: dict, tweak: dict | None) -> dict:
         return crop
     return {**crop,
             "zoom": crop["zoom"] * float(tweak.get("scale", 1.0)),
-            "dx": crop["dx"] - float(tweak.get("dx", 0.0)),
-            "dy": crop["dy"] - float(tweak.get("dy", 0.0))}
+            "dx": crop["dx"] + float(tweak.get("dx", 0.0)),
+            "dy": crop["dy"] + float(tweak.get("dy", 0.0))}
 
 
 def load_framing(path: Path | None) -> dict:
@@ -350,6 +351,10 @@ def text(x, y, content, *, size, weight, fill, anchor="start",
     )
 
 
+# crops the renderer had to pull back to keep a circle fully covered
+CLAMPED: list[str] = []
+
+
 def image_size(path: Path) -> tuple[int, int] | None:
     """Pixel size of a headshot, or None when Pillow is unavailable."""
     if importlib.util.find_spec("PIL") is None:
@@ -376,11 +381,22 @@ def placement(p: Person) -> str:
                 f'preserveAspectRatio="xMidYMid slice"')
     src_w, src_h = size
     scale = (2 * p.r) / min(src_w, src_h) * float(p.crop["zoom"])
+    # never let a crop expose the circle: zoom below full coverage, or a
+    # shift that runs off the edge, would leave a transparent bite
+    floor = (2 * p.r) / min(src_w, src_h)
+    if scale < floor:
+        CLAMPED.append(f"{p.id} (zoom {p.crop['zoom']:.2f} below coverage)")
+        scale = floor
     w, h = src_w * scale, src_h * scale
     x = p.cx - w / 2 + float(p.crop["dx"])
     y = p.cy - h / 2 + float(p.crop["dy"])
-    return (f'x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" '
-            f'preserveAspectRatio="none"')
+    bounded_x = min(max(x, p.cx + p.r - w), p.cx - p.r)
+    bounded_y = min(max(y, p.cy + p.r - h), p.cy - p.r)
+    # a sub-pixel correction is just the framer sitting on the boundary
+    if max(abs(bounded_x - x), abs(bounded_y - y)) > 0.5:
+        CLAMPED.append(f"{p.id} (shift runs past the edge of the photo)")
+    return (f'x="{fmt(bounded_x)}" y="{fmt(bounded_y)}" width="{fmt(w)}" '
+            f'height="{fmt(h)}" preserveAspectRatio="none"')
 
 
 def draw_headshot(p: Person, theme: dict, ring_w: float, typo: dict) -> str:
@@ -542,6 +558,7 @@ def render(cfg: dict, theme_name: str, people: dict[str, Person],
     w, h = cfg["canvas"]["width"], cfg["canvas"]["height"]
 
     USED_FACES.clear()
+    CLAMPED.clear()
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" '
         f'xmlns:xlink="http://www.w3.org/1999/xlink" width="{w}" height="{h}" '
@@ -710,6 +727,10 @@ def main(argv=None) -> int:
             else:
                 print("note: cairosvg not installed — skipping rasters "
                       "(pip install cairosvg)", file=sys.stderr)
+    if CLAMPED:
+        print("note: crop clamped to keep the circle covered: "
+              + ", ".join(dict.fromkeys(CLAMPED))
+              + " — needs a roomier source photo", file=sys.stderr)
     if violations:
         print(f"note: {len(violations)} clearance violation(s) above",
               file=sys.stderr)

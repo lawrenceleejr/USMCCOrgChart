@@ -67,10 +67,15 @@ def test_multiple_roles_stack_under_the_name(cfg, people):
 
 def test_alias_shares_one_photo_and_framing(cfg, people):
     aliases = [e for e in cfg["people"] if e.get("alias_of")]
+    bare = render.build_people({**cfg, "people": [
+        {k: v for k, v in e.items() if k != "nudge"} for e in cfg["people"]]},
+        REPO / "headshots", REPO / "config" / "framing.yaml")
     for entry in aliases:
         alias, original = people[entry["id"]], people[entry["alias_of"]]
         assert alias.photo == original.photo
-        assert alias.crop == original.crop
+        # the alias inherits the original's framing; each placing may still
+        # carry its own nudge on top
+        assert bare[entry["id"]].crop == bare[entry["alias_of"]].crop
         # same person, shown twice, in different roles and places
         assert alias.name == original.name
         assert (alias.cx, alias.cy) != (original.cx, original.cy)
@@ -132,9 +137,22 @@ def test_crop_knobs_zoom_and_shift(tmp_path):
     assert zoomed["width"] == pytest.approx(base["width"] * 2)
     assert zoomed["x"] + zoomed["width"] / 2 == pytest.approx(100)
 
-    shifted = rect(src, r=50, dx=10, dy=-5)
-    assert shifted["x"] == pytest.approx(base["x"] + 10)
-    assert shifted["y"] == pytest.approx(base["y"] - 5)
+    # a shift needs spare pixels to move into, so zoom in first
+    room = rect(src, r=50, zoom=2.0)
+    shifted = rect(src, r=50, zoom=2.0, dx=10, dy=-5)
+    assert shifted["x"] == pytest.approx(room["x"] + 10)
+    assert shifted["y"] == pytest.approx(room["y"] - 5)
+
+
+def test_crop_never_exposes_the_circle(tmp_path):
+    src = tmp_path / "tight.png"
+    Image.new("RGB", (200, 200), "grey").save(src)
+    # a zoom below coverage and a shift with nowhere to go are both pulled
+    # back rather than leaving a transparent bite out of the circle
+    for crop in ({"zoom": 0.5}, {"dx": 60}, {"dy": -60}, {"zoom": 0.8, "dx": 40}):
+        box = rect(src, r=50, **crop)
+        assert box["x"] <= 100 - 50 and box["x"] + box["width"] >= 100 + 50
+        assert box["y"] <= 100 - 50 and box["y"] + box["height"] >= 100 + 50
 
 
 def test_extract_headshots_crops_on_the_reference_coordinates(tmp_path):
