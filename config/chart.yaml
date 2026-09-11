@@ -294,6 +294,7 @@ people:
     style: sm
     layout: below
     at: [1754, 940]
+    nudge: {dx: 7}
 
   # ...and appears a second time on the speakers committee. `alias_of` says
   # this is the same person, so she keeps one headshot and one framing.
@@ -306,7 +307,6 @@ people:
     style: sm
     layout: below
     at: [1670, 1250]
-    nudge: {dx: 7}
 
   - id: black
     name: Kevin Black

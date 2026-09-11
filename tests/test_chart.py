@@ -73,8 +73,11 @@ def test_alias_shares_one_photo_and_framing(cfg, people):
     for entry in aliases:
         alias, original = people[entry["id"]], people[entry["alias_of"]]
         assert alias.photo == original.photo
-        # the alias inherits the original's framing; each placing may still
-        # carry its own nudge on top
+        # the same person is shown the same way in both places unless this
+        # placing deliberately overrides the nudge or the tone
+        if "nudge" not in entry and "adjust" not in entry:
+            assert alias.crop == original.crop
+            assert alias.adjust == original.adjust
         assert bare[entry["id"]].crop == bare[entry["alias_of"]].crop
         # same person, shown twice, in different roles and places
         assert alias.name == original.name

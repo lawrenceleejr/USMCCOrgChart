@@ -159,11 +159,14 @@ def build_people(cfg: dict, headshots: Path,
             photo=find_photo(source, headshots),
             # generated framing sits under anything set by hand, then any
             # nudge is applied relative to the result
-            adjust=dict(entry.get("adjust") or {}),
+            # an alias is the same person: it inherits the original's tone
+            # and nudge too, so the two placings look identical unless this
+            # one deliberately overrides them
+            adjust=dict(entry.get("adjust", source.get("adjust")) or {}),
             crop=nudge(
                 {**base_crop, **(computed.get(source["id"]) or {}),
                  **(entry.get("crop") or {})},
-                entry.get("nudge")),
+                entry.get("nudge", source.get("nudge"))),
         )
     return people
 
