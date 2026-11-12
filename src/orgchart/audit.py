@@ -138,6 +138,17 @@ def collect(cfg: dict, people: dict[str, Person], fonts: Path):
             left = ax - w / 2 if label.get("align") == "middle" else ax
             texts.append((f"{g['id']}:{line}", left, ay + y0, left + w, ay + y1))
 
+    for label in cfg.get("labels", []):
+        size = label.get("size", 21)
+        x0, y0, x1, y1 = metrics.extent(
+            fonts, typo[label.get("font", "secondary")]["family"],
+            label.get("weight", 400), label["text"], size)
+        ax, ay = label["at"]
+        w = x1 - x0
+        align = label.get("align", "middle")
+        left = ax - w / 2 if align == "middle" else ax - w if align == "end" else ax
+        texts.append((f"label:{label['text']}", left, ay + y0, left + w, ay + y1))
+
     lines = []
     for i, points in enumerate(cfg.get("connectors", [])):
         pts = [(resolve(x, people), resolve(y, people)) for x, y in points]

@@ -20,7 +20,7 @@ meta:
 
 canvas:
   width: 2000
-  height: 1460
+  height: 1780
 
 typography:
   # Display face: title and names. Secondary face: roles, affiliations,
@@ -153,9 +153,18 @@ connectors:
   - [[1190, 873], [1854, 873]]
   # experimental rep -> deputy
   - [["dipetrillo:cx", 647], ["dipetrillo:cx", 790], [1160, 790]]
+  # experimental rep -> subgroups
+  - [["dipetrillo:cx", 790], ["dipetrillo:cx", 1470]]
+  - [[340, 1470], [1360, 1470]]
   # accelerator rep -> working groups
   - [["stratakis:cx", 647], ["stratakis:cx", 873]]
   - [[60, 873], [650, 873]]
+
+# Free-standing headings, centred on `at` unless `align` says otherwise.
+labels:
+  - {text: Detector Design, at: [340, 1520]}
+  - {text: Software & Computing, at: [850, 1520]}
+  - {text: Detector Technology, at: [1360, 1520]}
 
 # Headshots are looked up in headshots/ as <id>.<jpg|jpeg|png|webp>, or by
 # an explicit `photo:` filename. `photo_source:` names the person's
@@ -306,7 +315,7 @@ people:
     order: [affiliation, role]
     style: sm
     layout: below
-    at: [1670, 1250]
+    at: [1750, 1250]
 
   - id: black
     name: Kevin Black
@@ -315,8 +324,55 @@ people:
     order: [affiliation, role]
     style: sm
     layout: below
-    at: [1420, 1250]
+    at: [1500, 1250]
     nudge: {dx: -8}
+
+  # experimental subgroup: Detector Design
+  - id: dervan
+    name: JP Dervan
+    photo_source: John Dervan
+    affiliation: Tennessee
+    style: sm
+    layout: below
+    at: [230, 1610]
+
+  - id: rosser
+    name: Ben Rosser
+    photo_source: Benjamin Rosser
+    affiliation: Chicago
+    style: sm
+    layout: below
+    at: [450, 1610]
+
+  # experimental subgroup: Software & Computing
+  - id: burzynski
+    name: Jackson Burzynski
+    affiliation: Oklahoma
+    style: sm
+    layout: below
+    at: [740, 1610]
+
+  - id: pedro
+    name: Kevin Pedro
+    affiliation: FNAL
+    style: sm
+    layout: below
+    at: [960, 1610]
+
+  # experimental subgroup: Detector Technology
+  - id: ott
+    name: Jennifer Ott
+    affiliation: Hawaii
+    style: sm
+    layout: below
+    at: [1250, 1610]
+
+  - id: yohay
+    name: Rachel Yohay
+    affiliation: Florida State
+    style: sm
+    layout: below
+    at: [1470, 1610]
 
 # Both themes paint on a transparent background; only the ink changes.
 themes:

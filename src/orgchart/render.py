@@ -669,6 +669,13 @@ def render(cfg: dict, theme_name: str, people: dict[str, Person],
                                    headshots))
         parts.append(draw_group(group, box, theme, strokes, typo,
                                 group_text_lines(group, cfg, fonts)))
+    # free-standing headings, e.g. the name over a cluster of people
+    for label in cfg.get("labels", []):
+        lx, ly = label["at"]
+        parts.append(text(lx, ly, label["text"], size=label.get("size", 21),
+                          weight=label.get("weight", 400), fill=theme["ink"],
+                          anchor=label.get("align", "middle"),
+                          font=font(typo, label.get("font", "secondary"))))
     for points in cfg.get("connectors", []):
         parts.append(draw_connector(points, people, theme, strokes["connector"]))
     for p in people.values():

@@ -6,7 +6,9 @@
 # chart.yaml, so a manual override still wins.
 berg: {dx: 11.4, dy: -32.7, zoom: 1.229}
 black: {dx: 6.1, dy: 5.3, zoom: 1.156}
+burzynski: {dx: -61.2, dy: 129.3, zoom: 4.686}
 chang: {dx: 0.1, dy: 1.0, zoom: 1.294}
+dervan: {dx: 11.7, dy: 12.0, zoom: 2.49}
 dipetrillo: {dx: 1.0, dy: -3.7, zoom: 1.075}
 holmes: {dx: 9.3, dy: -3.9, zoom: 1.149}
 hoover: {dx: -53.9, dy: 31.3, zoom: 2.463}
@@ -17,4 +19,6 @@ lee: {dx: 2.1, dy: -11.5, zoom: 1.23}
 meade: {dx: -3.3, dy: -13.6, zoom: 1.228}
 nanni: {dx: -5.1, dy: 22.4, zoom: 1.102}
 orimoto: {dx: -4.9, dy: -4.2, zoom: 1.098}
+pedro: {dx: 3.4, dy: -6.1, zoom: 1.121}
 stratakis: {dx: 6.9, dy: 1.3, zoom: 1.192}
+yohay: {dx: 3.9, dy: 15.0, zoom: 1.465}
