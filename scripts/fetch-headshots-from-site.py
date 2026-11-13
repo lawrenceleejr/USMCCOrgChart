@@ -29,6 +29,11 @@ from PIL import Image
 
 REPO = Path(__file__).resolve().parents[1]
 CONTENT = ("content/all_people", "content/leadership")
+# The site's own fallback store, named FirstLast.<ext>. Photos land here
+# when the membership database has none, but the site only finds them by
+# the database's form of the name, so some never reach a people page
+# (Ben Rosser's is saved as BenRosser.jpg; the database calls him Benjamin).
+SAVED = "scripts/saved_photos"
 EXTS = (".jpg", ".jpeg", ".png", ".webp")
 
 
@@ -82,20 +87,30 @@ def placeholders(site: Path, threshold: int) -> set[str]:
     return {d for d, n in counts.items() if n >= threshold}
 
 
-def best_photo(directories: list[Path], skip: set[str]) -> Path | None:
-    """The largest image across the candidate directories."""
+def index_saved(site: Path) -> dict[str, list[Path]]:
+    """Map normalised names to files in the site's saved_photos store."""
+    found: dict[str, list[Path]] = {}
+    root = site / SAVED
+    if root.is_dir():
+        for path in sorted(root.iterdir()):
+            if path.suffix.lower() in EXTS:
+                found.setdefault(normalise(path.stem), []).append(path)
+    return found
+
+
+def best_photo(candidates: list[Path], skip: set[str]) -> Path | None:
+    """The largest real image among the candidates."""
     best, best_pixels = None, 0
-    for directory in directories:
-        for path in sorted(directory.iterdir()):
-            if path.suffix.lower() not in EXTS or digest(path) in skip:
-                continue
-            try:
-                with Image.open(path) as im:
-                    pixels = im.size[0] * im.size[1]
-            except OSError:
-                continue
-            if pixels > best_pixels:
-                best, best_pixels = path, pixels
+    for path in candidates:
+        if path.suffix.lower() not in EXTS or digest(path) in skip:
+            continue
+        try:
+            with Image.open(path) as im:
+                pixels = im.size[0] * im.size[1]
+        except OSError:
+            continue
+        if pixels > best_pixels:
+            best, best_pixels = path, pixels
     return best
 
 
@@ -115,6 +130,7 @@ def main(argv=None) -> int:
 
     cfg = yaml.safe_load(args.config.read_text())
     site = index_site(args.site)
+    saved = index_saved(args.site)
     if not site:
         print(f"no {' or '.join(CONTENT)} under {args.site}", file=sys.stderr)
         return 1
@@ -131,15 +147,21 @@ def main(argv=None) -> int:
             continue
         if person.get("alias_of"):
             continue  # a second placing of someone already fetched
-        key = normalise(person.get("photo_source") or person["name"])
-        directories = site.get(key)
-        if not directories:
+        # try both the site's name for them and the chart's, since the
+        # saved store may use either
+        keys = {normalise(person["name"])}
+        if person.get("photo_source"):
+            keys.add(normalise(person["photo_source"]))
+        directories = [d for k in keys for d in site.get(k, [])]
+        candidates = [f for d in directories for f in sorted(d.iterdir())]
+        candidates += [f for k in keys for f in saved.get(k, [])]
+        if not candidates:
             missing.append(f"{pid} ({person['name']})")
             continue
-        source = best_photo(directories, shared)
+        source = best_photo(candidates, shared)
         if source is None:
-            missing.append(f"{pid} (only a placeholder in "
-                           f"{directories[0].name})")
+            where = directories[0].name if directories else "saved photos"
+            missing.append(f"{pid} (only a placeholder in {where})")
             continue
         with Image.open(source) as im:
             size = im.size

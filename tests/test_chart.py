@@ -28,7 +28,9 @@ def cfg():
 
 @pytest.fixture(scope="module")
 def people(cfg):
-    return render.build_people(cfg, REPO / "headshots")
+    # built as the real render builds them, framing included
+    return render.build_people(cfg, REPO / "headshots",
+                               REPO / "config" / "framing.yaml")
 
 
 def test_layout_has_no_clearance_violations(cfg, people):
@@ -83,6 +85,23 @@ def test_alias_shares_one_photo_and_framing(cfg, people):
         assert alias.name == original.name
         assert (alias.cx, alias.cy) != (original.cx, original.cy)
         assert alias.roles != original.roles
+
+
+def test_alias_framing_holds_across_sizes(cfg, people):
+    """One person shown at two sizes is cropped the same, relative to the
+    circle: shifts scale with the radius rather than staying in raw units."""
+    def relative(p):
+        vals = dict(re.findall(r'(x|y|width|height)="([-\d.]+)"',
+                               render.placement(p)))
+        return (round((float(vals["x"]) - p.cx) / p.r, 4),
+                round((float(vals["y"]) - p.cy) / p.r, 4),
+                round(float(vals["width"]) / p.r, 4))
+
+    for entry in cfg["people"]:
+        if entry.get("alias_of") and people[entry["id"]].photo is not None:
+            alias, original = people[entry["id"]], people[entry["alias_of"]]
+            # equal to within the SVG's six-significant-figure coordinates
+            assert relative(alias) == pytest.approx(relative(original), abs=1e-3)
 
 
 def test_group_prose_wraps_to_its_width(cfg):

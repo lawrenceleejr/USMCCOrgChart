@@ -107,12 +107,18 @@ def find_photo(person: dict, headshots: Path) -> Path | None:
 
 DEFAULT_CROP = {"zoom": 1.0, "dx": 0.0, "dy": 0.0}
 
+# Crop shifts (dx/dy, framed or nudged) are measured for a headshot of this
+# radius and scaled to the circle they land in, so resizing a node keeps
+# its framing, and one person shown at two sizes is framed identically.
+REFERENCE_R = 50.0
+
 
 def nudge(crop: dict, tweak: dict | None) -> dict:
     """Apply a hand tweak on top of a computed crop.
 
-    `dx`/`dy` shift the subject within the circle, in canvas units —
-    negative dx moves them left, positive dy moves them down — and
+    `dx`/`dy` shift the subject within the circle, in canvas units for a
+    standard 50-unit headshot (scaled for other sizes) — negative dx moves
+    them left, positive dy moves them down — and
     `scale` multiplies the framed zoom. They are relative, so re-running
     the framer does not throw the tweak away.
     """
@@ -461,8 +467,9 @@ def placement(p: Person) -> str:
         CLAMPED.append(f"{p.id} (zoom {p.crop['zoom']:.2f} below coverage)")
         scale = floor
     w, h = src_w * scale, src_h * scale
-    x = p.cx - w / 2 + float(p.crop["dx"])
-    y = p.cy - h / 2 + float(p.crop["dy"])
+    k = p.r / REFERENCE_R
+    x = p.cx - w / 2 + float(p.crop["dx"]) * k
+    y = p.cy - h / 2 + float(p.crop["dy"]) * k
     bounded_x = min(max(x, p.cx + p.r - w), p.cx - p.r)
     bounded_y = min(max(y, p.cy + p.r - h), p.cy - p.r)
     # a sub-pixel correction is just the framer sitting on the boundary

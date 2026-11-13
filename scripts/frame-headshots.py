@@ -163,6 +163,9 @@ def main(argv=None) -> int:
             skipped.append(f"{pid} (confidence {score:.2f})")
             continue
         zoom, dx, dy, fits = solve(size, face, person.r, args.fill)
+        # store shifts for the reference radius; the renderer scales them
+        ref = 50.0 / person.r
+        dx, dy = dx * ref, dy * ref
         framing[pid] = {"zoom": round(zoom, 3), "dx": round(dx, 1),
                         "dy": round(dy, 1)}
         if not fits:

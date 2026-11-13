@@ -19,8 +19,8 @@ meta:
   basename: usmcc-org-chart
 
 canvas:
-  width: 2000
-  height: 1780
+  width: 2290
+  height: 1260
 
 typography:
   # Display face: title and names. Secondary face: roles, affiliations,
@@ -35,12 +35,12 @@ typography:
     font: display
     size: 86
     weight: 700
-    at: [1000, 150]
+    at: [1145, 150]
   date:
     font: secondary
     size: 27
     weight: 400
-    at: [1000, 212]
+    at: [1145, 212]
 
 # Minimum clear space, in canvas units, enforced by the layout audit that
 # runs on every build (`--strict` turns a violation into a build failure).
@@ -85,6 +85,13 @@ styles:
     name: {font: display, size: 25, weight: 700}
     meta: {font: secondary, size: 17, weight: 400}
     dy: {name: -18, role: 7, affiliation: 31}
+  # the tier below the deputies: working groups, coordinators, subgroups
+  xs:
+    r: 36
+    gap: 0
+    name: {font: display, size: 20, weight: 700}
+    meta: {font: secondary, size: 15, weight: 400}
+    dy: {name: 70, role: 92, affiliation: 112}
   sm:
     r: 50
     gap: 0
@@ -120,9 +127,8 @@ groups:
       line_height: 27
   - id: speakers
     # [top, right, bottom, left] — the deeper top band holds the label
-    padding: [74, 24, 24, 24]
-    # centre the box on the pair, so the air beside them matches
-    symmetric: true
+    padding: [74, 28, 24, 28]
+    match_vertical: council
     members: [orimoto-speakers, black]
     label:
       lines: [Speakers Committee]
@@ -150,21 +156,21 @@ connectors:
   # communications coordinator -> deputy -> coordinators
   - [["kennedy:cx", 647], ["kennedy:cx", 873]]
   - [["kennedy:cx", 790], [1960, 790]]
-  - [[1190, 873], [1854, 873]]
+  - [[1490, 873], [1980, 873]]
   # experimental rep -> deputy
   - [["dipetrillo:cx", 647], ["dipetrillo:cx", 790], [1160, 790]]
   # experimental rep -> subgroups
-  - [["dipetrillo:cx", 790], ["dipetrillo:cx", 1470]]
-  - [[340, 1470], [1360, 1470]]
+  - [["dipetrillo:cx", 790], ["dipetrillo:cx", 873]]
+  - [[680, 873], [1318, 873]]
   # accelerator rep -> working groups
   - [["stratakis:cx", 647], ["stratakis:cx", 873]]
-  - [[60, 873], [650, 873]]
+  - [[60, 873], [540, 873]]
 
 # Free-standing headings, centred on `at` unless `align` says otherwise.
 labels:
-  - {text: Detector Design, at: [340, 1520]}
-  - {text: Software & Computing, at: [850, 1520]}
-  - {text: Detector Technology, at: [1360, 1520]}
+  - {text: Detector Design, at: [680, 916], size: 18}
+  - {text: Software & Computing, at: [1008, 916], size: 18}
+  - {text: Detector Technology, at: [1318, 916], size: 18}
 
 # Headshots are looked up in headshots/ as <id>.<jpg|jpeg|png|webp>, or by
 # an explicit `photo:` filename. `photo_source:` names the person's
@@ -179,7 +185,7 @@ people:
     style: xl
     layout: left
     at: [766, 348]
-    nudge: {dx: -7, dy: 7}
+    nudge: {dx: -5.8, dy: 5.8}
   - id: holmes
     name: Tova Holmes
     role: Vice Chair
@@ -187,7 +193,7 @@ people:
     style: xl
     layout: left
     at: [1145, 348]
-    nudge: {dx: -7}
+    nudge: {dx: -5.8}
 
   - id: stratakis
     name: Diktys Stratakis
@@ -228,7 +234,7 @@ people:
     style: lg
     layout: left
     at: [1512, 568]
-    nudge: {dx: 7}
+    nudge: {dx: 6.5}
 
   - id: lee
     name: Lawrence Lee
@@ -243,48 +249,48 @@ people:
     name: J. Scott Berg
     role: Design
     affiliation: BNL
-    style: sm
+    style: xs
     layout: below
-    at: [130, 940]
+    at: [130, 926]
     nudge: {scale: 0.85, dx: -8}
   - id: hoover
     name: Austin Hoover
     role: Proton Driver
     affiliation: ORNL
-    style: sm
+    style: xs
     layout: below
-    at: [350, 940]
+    at: [300, 926]
   - id: hedges
     name: Mike Hedges
     role: Target
     affiliation: FNAL
-    style: sm
+    style: xs
     layout: below
-    at: [570, 940]
+    at: [470, 926]
   - id: bagdley
     name: Karie Badgley
     role: Magnets
     affiliation: FNAL
-    style: sm
+    style: xs
     layout: below
-    at: [238, 1158]
+    at: [215, 1100]
     nudge: {scale: 0.85}
   - id: nanni
     name: Emilio Nanni
     role: RF
     affiliation: SLAC
-    style: sm
+    style: xs
     layout: below
-    at: [458, 1158]
+    at: [385, 1100]
     nudge: {dx: 7}
 
   - id: de
     name: Kaushik De
     role: Gov't Relations Coordinator
     affiliation: UT Arlington
-    style: sm
+    style: xs
     layout: below
-    at: [1290, 940]
+    at: [1550, 926]
     nudge: {dx: -4}
   - id: chang
     name: Philip Chang
@@ -292,17 +298,17 @@ people:
     affiliation: Florida
     # backlit sunset shot; his face falls into shadow
     adjust: {brightness: 1.18}
-    style: sm
+    style: xs
     layout: below
-    at: [1522, 940]
+    at: [1735, 926]
     nudge: {dx: -7}
   - id: orimoto
     name: Toyoko Orimoto
     role: Inreach Coordinator
     affiliation: Northeastern
-    style: sm
+    style: xs
     layout: below
-    at: [1754, 940]
+    at: [1920, 926]
     nudge: {dx: 7}
 
   # ...and appears a second time on the speakers committee. `alias_of` says
@@ -313,18 +319,18 @@ people:
     role: ""
     affiliation: Northeastern
     order: [affiliation, role]
-    style: sm
-    layout: below
-    at: [1750, 1250]
+    style: md
+    layout: left
+    at: [1960, 555]
 
   - id: black
     name: Kevin Black
     role: Chair
     affiliation: Wisconsin
     order: [affiliation, role]
-    style: sm
-    layout: below
-    at: [1500, 1250]
+    style: md
+    layout: left
+    at: [1960, 405]
     nudge: {dx: -8}
 
   # experimental subgroup: Detector Design
@@ -332,47 +338,47 @@ people:
     name: JP Dervan
     photo_source: John Dervan
     affiliation: Tennessee
-    style: sm
+    style: xs
     layout: below
-    at: [230, 1610]
+    at: [620, 980]
 
   - id: rosser
     name: Ben Rosser
     photo_source: Benjamin Rosser
     affiliation: Chicago
-    style: sm
+    style: xs
     layout: below
-    at: [450, 1610]
+    at: [740, 980]
 
   # experimental subgroup: Software & Computing
   - id: burzynski
     name: Jackson Burzynski
     affiliation: Oklahoma
-    style: sm
+    style: xs
     layout: below
-    at: [740, 1610]
+    at: [932, 980]
 
   - id: pedro
     name: Kevin Pedro
     affiliation: FNAL
-    style: sm
+    style: xs
     layout: below
-    at: [960, 1610]
+    at: [1084, 980]
 
   # experimental subgroup: Detector Technology
   - id: ott
     name: Jennifer Ott
     affiliation: Hawaii
-    style: sm
+    style: xs
     layout: below
-    at: [1250, 1610]
+    at: [1253, 980]
 
   - id: yohay
     name: Rachel Yohay
     affiliation: Florida State
-    style: sm
+    style: xs
     layout: below
-    at: [1470, 1610]
+    at: [1383, 980]
 
 # Both themes paint on a transparent background; only the ink changes.
 themes:
