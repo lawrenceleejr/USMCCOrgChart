@@ -13,7 +13,7 @@
 meta:
   title: USMCC Leadership
   # ---- set the date stamp here -------------------------------------------
-  date: Sep 2026
+  date: Nov 2026
   # ------------------------------------------------------------------------
   # Base name for the rendered files, e.g. out/usmcc-org-chart-light.svg
   basename: usmcc-org-chart
