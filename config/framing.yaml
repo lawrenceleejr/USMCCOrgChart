@@ -19,6 +19,7 @@ lee: {dx: 2.1, dy: -11.5, zoom: 1.23}
 meade: {dx: -3.0, dy: -12.6, zoom: 1.228}
 nanni: {dx: -5.1, dy: 22.4, zoom: 1.102}
 orimoto: {dx: -4.9, dy: -4.2, zoom: 1.098}
+ott: {dx: -1.6, dy: 16.4, zoom: 1.071}
 pedro: {dx: 3.4, dy: -6.1, zoom: 1.121}
 rosser: {dx: 2.1, dy: 0.5, zoom: 1.043}
 stratakis: {dx: 6.4, dy: 1.2, zoom: 1.192}
