@@ -161,7 +161,7 @@ connectors:
   - [["dipetrillo:cx", 647], ["dipetrillo:cx", 790], [1160, 790]]
   # experimental rep -> subgroups
   - [["dipetrillo:cx", 790], ["dipetrillo:cx", 873]]
-  - [[640, 873], [1220, 873]]
+  - [[690, 873], [1300, 873]]
   # accelerator rep -> working groups
   - [["stratakis:cx", 647], ["stratakis:cx", 873]]
   - [[60, 873], [540, 873]]
@@ -169,9 +169,9 @@ connectors:
 # Free-standing headings, centred on `at` unless `align` says otherwise.
 labels:
   # experimental subgroups, each captioned beneath its pair
-  - {text: Detector Design, at: [727, 1052], size: 18}
-  - {text: Software & Computing, at: [1099, 1052], size: 18}
-  - {text: Detector Technology, at: [925, 1246], size: 18}
+  - {text: Detector Design, at: [792, 1052], size: 18}
+  - {text: Software & Computing, at: [1180, 1052], size: 18}
+  - {text: Detector Technology, at: [990, 1246], size: 18}
 
 # Headshots are looked up in headshots/ as <id>.<jpg|jpeg|png|webp>, or by
 # an explicit `photo:` filename. `photo_source:` names the person's
@@ -341,7 +341,7 @@ people:
     affiliation: Tennessee
     style: xs
     layout: below
-    at: [665, 926]
+    at: [715, 926]
 
   - id: rosser
     name: Ben Rosser
@@ -349,7 +349,7 @@ people:
     affiliation: Chicago
     style: xs
     layout: below
-    at: [790, 926]
+    at: [870, 926]
 
   # experimental subgroup: Software & Computing
   - id: burzynski
@@ -357,14 +357,14 @@ people:
     affiliation: Oklahoma
     style: xs
     layout: below
-    at: [1022, 926]
+    at: [1102, 926]
 
   - id: pedro
     name: Kevin Pedro
     affiliation: FNAL
     style: xs
     layout: below
-    at: [1177, 926]
+    at: [1257, 926]
 
   # experimental subgroup: Detector Technology
   - id: ott
@@ -372,14 +372,14 @@ people:
     affiliation: Hawaii
     style: xs
     layout: below
-    at: [860, 1120]
+    at: [912, 1120]
 
   - id: yohay
     name: Rachel Yohay
     affiliation: Florida State
     style: xs
     layout: below
-    at: [990, 1120]
+    at: [1067, 1120]
 
 # Both themes paint on a transparent background; only the ink changes.
 themes:
