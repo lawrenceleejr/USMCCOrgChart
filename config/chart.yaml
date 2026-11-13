@@ -19,7 +19,7 @@ meta:
   basename: usmcc-org-chart
 
 canvas:
-  width: 2290
+  width: 2030
   height: 1275
 
 typography:
@@ -35,12 +35,12 @@ typography:
     font: display
     size: 86
     weight: 700
-    at: [1145, 150]
+    at: [1015, 150]
   date:
     font: secondary
     size: 27
     weight: 400
-    at: [1145, 212]
+    at: [1015, 212]
 
 # Minimum clear space, in canvas units, enforced by the layout audit that
 # runs on every build (`--strict` turns a violation into a build failure).
@@ -92,6 +92,13 @@ styles:
     name: {font: display, size: 20, weight: 700}
     meta: {font: secondary, size: 15, weight: 400}
     dy: {name: 70, role: 92, affiliation: 112}
+  # the same small headshot with its text beside it, for a compact row
+  xsl:
+    r: 36
+    gap: 12
+    name: {font: display, size: 20, weight: 700}
+    meta: {font: secondary, size: 15, weight: 400}
+    dy: {name: -14, role: 7, affiliation: 26}
   sm:
     r: 50
     gap: 0
@@ -126,15 +133,14 @@ groups:
       align: middle
       line_height: 27
   - id: speakers
-    # [top, right, bottom, left] — the deeper top band holds the label
-    padding: [74, 28, 24, 28]
-    match_vertical: council
+    # [top, right, bottom, left] — the top band holds the label
+    padding: [52, 24, 24, 24]
     members: [orimoto-speakers, black]
     label:
       lines: [Speakers Committee]
-      at: [24, 44]
+      at: [24, 32]
       font: secondary
-      size: 21
+      size: 18
       align: start
   - id: council
     padding: 22
@@ -320,18 +326,18 @@ people:
     role: ""
     affiliation: Northeastern
     order: [affiliation, role]
-    style: md
+    style: xsl
     layout: left
-    at: [1960, 555]
+    at: [1780, 1178]
 
   - id: black
     name: Kevin Black
     role: Chair
     affiliation: Wisconsin
     order: [affiliation, role]
-    style: md
+    style: xsl
     layout: left
-    at: [1960, 405]
+    at: [1551, 1178]
     nudge: {dx: -8}
 
   # experimental subgroup: Detector Design
